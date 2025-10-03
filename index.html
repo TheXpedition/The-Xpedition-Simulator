@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Xpedition — Simulador</title>
+<title>The Xpedition — Simulador (Patched v6.1)</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -2526,6 +2526,7 @@ if (type === "Duelos") {
     if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Se puso a llorar en el reto.")); }
     if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Amenazó con denunciar a Bonju por Sobreexplotación.")); }
     if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Hizo trampa en el reto.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Falleció durante el episodio.")); }
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"" + a + " intentó formar una alianza con " + b + ".")); }
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"" + a + " estuvo pidiendole a los demás que nominarán a " + b + " al Duelo de Eliminación.")); }
   }
