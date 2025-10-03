@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Xpedition — Simulador</title>
+<title>The Xpedition — Simulador (Patched v6.1)</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -736,20 +736,24 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
   // ====================== EN SOLITARIO (máx 2 por partida) ======================
   const SOLO_EVENTS = [
     ["Alexandro","Invitó a los demás a entrar a su propio concurso donde si son profesionales."],
+    ["Alexandro","Amenazó a la producción con mandar a sus sicarios."],
     ["Alice","..."],
     ["Anderson Moreno","Dijo que le dieron permiso de mandarlos a comer m*erd* a todos."],
     ["Andromeda","no estuvo presente en el reto porque a las 6pm apenas se despertaba de estar metida en Genshit Impact."],
+    ["Andromeda","🦧"],
     ["Andromeda","Dijo muy orgulla que estaba haciendo el Challenge de Nada de Agua durante 300 días"],
     ["Andromeda","Se tiró un peo y mató a todo el cast"],
     ["Ari Salgado","le dijo a Bonju que no esperaba nada de ella pero aún asi estaba decepcionado."],
     ["Pier","Woof Woof."],
     ["Pier","Mordió a Bonju."],
+    ["Pier","🐕‍🦺"],
     ["Pier","Se orinó en un poste."],
     ["Beto","dijo que revendía cosas, pero solo era una estafa."],
     ["Christopher","se cagó los boxers."],
     ["Dios","Purificó el agua."],
     ["Dios","Dejo a todos sorprendidos por sus increibles habilidades, no cabe duda que es la mejor persona que existe en el mundo, nadie ha llegado a ese nivel!! te amamos."],
     ["Catalina","Dijo que nadie nunca la apoya."],
+    ["Catalina","🤬😠😠😤😡"],
     ["Catalina","Saco a Simba y se lo enseño al resto de la selva."],
     ["Catalina","Dijo que su nombre ahora era kylie catalina krystal courtney leafy mufasa simba TD diaz."],
     ["Catalina","Dijo que tenía cosas mas importantes que estar en este programa de cuarta."],
@@ -802,6 +806,7 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Felix","Se le empezó a caer la piel durante el reto."],
     ["Felix","Fue confundido con una momia y lo metieron a una tumba."],
     ["Gabriel Sab","se la pasó hablando como cotorra y no dejaba explicar a Bonju el reto."],
+    ["Gabriel Sab","Fue rechazado por sus compañeros y lo hicieron de lado, no aguantó y se suicidó, BonjuStudios pagará una demanda para que este episodio no salga al aire."],
     ["Iñaella Rose","preguntó por el nombre del programa."],
     ["Isabel","colapsó y eliminó a todos de su lista de amigos en League of Legends."],
     ["Isabel","Se disfrazo de Nicki Gorilaj."],
@@ -839,6 +844,7 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Bayron","Se puso a llorar porque jamás ha ganado nada"],
     ["Nidia Mirella","dijo que sabía quien era Kira."],
     ["Nicki Gorilaj","Hizo el baile del gorila."],
+    ["Nicki Gorilaj","🙈🙊🙉"],
     ["Sophia Asdero","Se metió a la piscina y se dieron cuenta que es travesti."],
     ["Ignacio Ricci","Mando un audio de mil horas."],
     ["Silvanya D'Lemberth","Buscó conflictos con el resto del cast."],
@@ -859,6 +865,10 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Nahuee","Se disfrazó del títere que sale en la pelicula del juego del miedo."],
     ["Nahuee","Dijo que ella duraría 23 casi 24 episodios."],
     ["Nahuee","Se fue a comprar a Prichos mientras hacían el reto."],
+    ["Greg","Calificó el episodio con un 0 de 100 en Gregcritic."],
+    ["Greg","Filtró conversaciones ajenas."],
+    ["Greg","Calificó el episodio con un 5 de 100 en Gregcritic."],
+    ["Greg","🤓"],
     ["Ian Esteban","se le olvido que hoy era el reto y no hizo una Samuel"]
   ];
 
@@ -2434,12 +2444,69 @@ else if (type === "Wipeout 💦") {
     }
   }
 
-  // Suerte
-  if (type === "Suerte") {
-    list.appendChild(titleRow("Botellas misteriosas"));
-    const unlucky = sample(alive, Math.max(1, Math.floor(alive.length * 0.2)));
-    unlucky.forEach(n => list.appendChild(evRowSingle(n, "quedó fuera al aparecer su nombre en una botella.")));
+// Suerte — Botellas (eliminaciones hasta que quede 1; SIN return aquí)
+if (type === "Suerte") {
+  list.appendChild(titleRow("Botellas misteriosas"));
+
+  // Clonar vivos y preparar estado
+  const pool = alive.slice();
+  const eliminados = new Set();
+  let shooters = shuffle(pool.slice()); // orden de “tiradores”
+
+  // Disparos hasta que quede 1 en pie
+  while (shooters.length && pool.filter(n => !eliminados.has(n)).length > 1) {
+    const shooter = shooters.shift();
+    if (eliminados.has(shooter)) continue;
+
+    // Botellas disponibles = dueños vivos
+    const vivos = pool.filter(n => !eliminados.has(n));
+    const victim = vivos[Math.floor(Math.random() * vivos.length)]; // si se da su propio nombre, cae igual
+
+    // Línea: ICON+NOMBRE (shooter) ... “estaba el nombre de” ... ICON+NOMBRE (victim)
+    const row = document.createElement("div"); 
+    row.className = "ev-row";
+    row.appendChild(chip(shooter, shooter));
+
+    const t = document.createElement("span"); 
+    t.className = "txt";
+    t.textContent = " disparó a una botella y estaba el nombre de ";
+    row.appendChild(t);
+
+    row.appendChild(chip(victim, victim));
+    list.appendChild(row);
+
+    // Línea: víctima fuera
+    list.appendChild(evRowSingle(victim, "ha quedado fuera."));
+
+    // La víctima ya no puede seguir disparando
+    eliminados.add(victim);
+    shooters = shooters.filter(n => n !== victim);
   }
+
+  // Último en pie + remate de Bonju
+  const left = pool.filter(n => !eliminados.has(n));
+  const winner = left[0];
+  if (winner) {
+    const row = document.createElement("div"); 
+    row.className = "ev-row";
+    row.appendChild(chip(winner, winner));
+
+    const t1 = document.createElement("span"); 
+    t1.className = "txt";
+    t1.textContent = " fue el último en pie, pero ";
+    row.appendChild(t1);
+
+    row.appendChild(chip("Bonju", "Bonju"));
+
+    const t2 = document.createElement("span"); 
+    t2.className = "txt";
+    t2.textContent = " le disparó a su botella y le dijo que aquí solo gana el que ella quiera!";
+    row.appendChild(t2);
+
+    list.appendChild(row);
+  }
+}
+
 
   // Bonju Chef
   if (type === "Bonju Chef") {
