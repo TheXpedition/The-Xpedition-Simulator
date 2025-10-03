@@ -2453,6 +2453,7 @@ if (type === "Duelos") {
   if (!["Show de Talentos","Bonju Drag Race","Town of Salem","Top Model"].includes(type)) {
     if (alive.includes("Iñaella Rose")) list.appendChild(evRowSingle("Iñaella Rose","No entendió el reto."));
      if (alive.includes("Adriana Pereira")) list.appendChild(evRowSingle("Adriana Pereira","Se durmió en el reto."));
+         if (alive.includes("Eduard")) list.appendChild(evRowSingle("Eduard","Dijo que Clockearon su Té."));
      if (alive.includes("Dani")) list.appendChild(evRowSingle("Dani","Acosó a las mujeres del cast."));
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Tuvieron una fuerte discusión.")); }
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Hicieron planes para hacer el amor detrás de cámaras.")); }
