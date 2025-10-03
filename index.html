@@ -546,7 +546,7 @@ if (typeof window.SONGS === 'undefined') window.SONGS = ["Sugar On My Tongue - T
 
 /* ====== Datos ====== */
 const ALL_PARTICIPANTS = [
-"Dios", "Adriana Pereira", "Alexandro", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Azael", "Azealia Midnight", "Bayron", "Beto", "Bruno Macri", "Bryan Montalvo", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Dani", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Kim Camila", "Lalamila", "Leandro", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Paula Garcia", "Paulis Queen", "Peggy", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
+"Dios", "Adriana Pereira", "Alexandro", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Azael", "Azealia Midnight", "Bayron", "Beto", "Bruno Macri", "Bryan Montalvo", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Dani", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Kim Camila", "Lalamila", "Leandro", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Paula Garcia", "Paulis Queen", "Peggy", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Sophia Asdero", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
 
 
 ];
@@ -571,7 +571,7 @@ const GENDER_MAP = (()=> {
     ["Ivy","F"],["Iñaella Rose","F"],["Julián","M"],["Kim Camila","F"],["Lalamila","F"],["Leandro","M"],
     ["Lucas Mendez","M"],["Luciano","M"],["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Nahuee","M"],["Nicki Gorilaj","F"],
     ["Nidia Mirella","F"],["Ocean Harmony","F"],["Oscar","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pier","M"],["Plastique Doll","F"],
-    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],
+    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],["Sophia Asdero","F"],
     ["Stalin Mango","M"],["Vita","M"],["Vitany Glambert","F"],["Ximena","F"],["Xina Ro","F"]
   ];
   const m = {};
@@ -602,7 +602,7 @@ function isEligibleForComeback(name){
 }
 
 const TEAMS = ["Pingüinos","Focas","Krills","Leones","Serpientes","Cebras","Guepardos","Escorpiones"];
-const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bonju.jpeg"];
+const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bonju.jpeg","Personajes/bonju.png","Personajes/bonju.jpg","Personajes/bonju.jpeg","Personajes/Bonju.png","Personajes/Bonju.jpg","Personajes/Bonju.jpeg"];
 
 /* ====== Helpers ====== */
 /* ====== Custom Additions ====== */
@@ -1562,7 +1562,28 @@ function buildNarration(type, context = {}){
 "¿Quién mató a Bonju?": "Hoy resolverán un misterio. Entre pistas, declaraciones y sospechas deberán deducir quién es el responsable. Se calificará la capacidad de conectar evidencias, elaborar hipótesis coherentes y argumentar con lógica frente al jurado.",
 "Bonju Drag Race": "El escenario es suyo. En este formato de performance y pasarela, deberán demostrar presencia escénica, ejecución impecable y dominio del personaje. Se premiará originalidad, carisma y resolución bajo presión.",
 "Top Model": "Hoy encarnarán la elegancia. En una competencia de modelaje profesional, se juzgará la pose, expresión, control corporal y versatilidad frente a cámara. La constancia y la actitud definirán quién realmente domina la pasarela."
-};
+"Wipeout 💦": "Hoy los participantes enfrentarán un circuito extremo de obstáculos inspirados en Wipeout. Cada sección combina velocidad, resistencia y equilibrio, donde un solo paso en falso puede costar la victoria. Se evaluará la capacidad de adaptación, la coordinación y el control corporal al superar cada obstáculo sin rendirse.",
+
+"Expedición Turística en la Antártida": "En este reto, los concursantes deberán recrear la experiencia de guiar una expedición turística por los helados parajes antárticos. Se valorará su conocimiento ambiental, creatividad narrativa, improvisación y carisma al presentar. Ganará quien logre que su relato transporte al público a la aventura sin perder coherencia ni emoción.",
+
+"Batalla de Baile": "Hoy, el ritmo será el juez supremo. Los competidores se enfrentarán en duelos de danza donde importan tanto la técnica como la interpretación. Se juzgará coordinación, originalidad de pasos, energía escénica y sincronía con la música. Un mal movimiento o falta de presencia podría ser fatal.",
+
+"Covers": "Cada participante interpretará una canción icónica a su propio estilo. No se trata solo de imitar, sino de reinventar. Se calificará afinación, interpretación vocal, manejo escénico y creatividad en la adaptación. Quien logre hacer suya la pieza y emocionar al público se llevará la victoria.",
+
+"Sillas Musicales": "Clásico juego llevado al extremo. Los concursantes competirán por conseguir un asiento mientras la música suena. Cada ronda elimina a uno y pone a prueba reflejos, estrategia y percepción del ritmo. Se destacará a quien combine rapidez con astucia, sabiendo cuándo atacar y cuándo resistir.",
+
+"Entrevista de Trabajo": "Hoy los participantes demostrarán su capacidad comunicativa y persuasiva en una simulación de entrevista profesional. Se evaluará seguridad, coherencia, vocabulario, improvisación y lenguaje corporal. Ganará quien logre proyectar autenticidad, liderazgo y dominio del discurso ante el jurado.",
+
+"Romper Hielos": "Este reto pondrá a prueba la fuerza, precisión y estrategia. Los concursantes deberán quebrar bloques de hielo o superar barreras congeladas en distintas etapas. No se trata solo de poder físico, sino de técnica, ritmo y enfoque. Se premiará la eficiencia, la resistencia y el control de energía.",
+
+"Excluir": "Hoy deberán tomar una decisión difícil: excluir temporalmente a un compañero del desafío. Se medirá liderazgo, empatía y criterio al justificar su elección. Gana quien logre mantener la calma y argumentar con coherencia sin dañar su posición social ni generar enemigos innecesarios.",
+
+"Roba un Bonjuroit": "En este reto caótico, los participantes competirán por obtener y proteger un objeto clave: el Bonjuroit. La estrategia y el engaño serán esenciales. Se valorará la astucia, la capacidad para anticipar movimientos rivales y el control emocional bajo presión. Un paso mal calculado puede convertirlos en blanco de todos.",
+
+"La Bomba": "Una cuenta regresiva definirá el destino del grupo. Cada concursante deberá pasar la bomba respondiendo preguntas o cumpliendo desafíos antes de que estalle. Se evaluará rapidez mental, manejo del estrés y reflejos. Quien logre mantener la calma y actuar con precisión en el momento crítico, triunfará.",
+
+"Gimnasio": "Hoy los competidores demostrarán fuerza, resistencia y disciplina física. En una serie de pruebas atléticas, se valorará técnica, consistencia y superación personal. No gana el más fuerte, sino quien mantenga el equilibrio entre potencia, resistencia y determinación bajo presión."
+}
 
   let marco = "";
   if (ep === 18) {
@@ -2453,7 +2474,7 @@ if (type === "Duelos") {
   if (!["Show de Talentos","Bonju Drag Race","Town of Salem","Top Model"].includes(type)) {
     if (alive.includes("Iñaella Rose")) list.appendChild(evRowSingle("Iñaella Rose","No entendió el reto."));
      if (alive.includes("Adriana Pereira")) list.appendChild(evRowSingle("Adriana Pereira","Se durmió en el reto."));
-         if (alive.includes("Eduard")) list.appendChild(evRowSingle("Eduard","Dijo que Clockearon su Té."));
+     if (alive.includes("Eduard")) list.appendChild(evRowSingle("Eduard","Dijo que Clockearon su Té."));
      if (alive.includes("Dani")) list.appendChild(evRowSingle("Dani","Acosó a las mujeres del cast."));
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Tuvieron una fuerte discusión.")); }
     if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Hicieron planes para hacer el amor detrás de cámaras.")); }
@@ -2547,6 +2568,7 @@ if (type === "Duelos") {
     "Marianito":"Tirarse a la Piscina",
     "Anderson Moreno":"Mandar audios insultando",
     "Stalin Mango":"Licuar frutas",
+    "Sophia Asdero":"No tiene",
     "Silvanya D'Lemberth":"Hacer Boicots",
     "Leandro":"Salirse de Chats",
     "Ian Esteban":"Apostar",
