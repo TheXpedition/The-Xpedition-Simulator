@@ -1702,6 +1702,9 @@ function resetEpisodeUI(){
   $("#goVests").textContent="Asignar chalecos →";
   challengeSelect.selectedIndex=0;
   runChallenge.disabled=true;
+  if (window.__ce_state) 
+    window.__ce_state.groupUsed = 0;
+    window.__ce_state.soloUsed  = 0;
 }
 
 let vestsMode = "nominate"; // 'nominate' | 'save1'
