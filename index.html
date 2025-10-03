@@ -1,0 +1,4243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Xpedition — Simulador (Patched v6.1)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#ffeed1; --bg2:#ffd39a; --bg3:#ffb36a; --tile:#fff9f0; --ink:#2a1d12;
+  --accent:#ff7a1a; --accent-2:#ffb347; --ok:#29b36b; --warn:#f59e0b; --danger:#e43d3d; --muted:#6e7a86;
+  --glass: rgba(255,255,255,.55);
+  --glass-brd: rgba(255,255,255,.8);
+  /* Track Record */
+  --tr-win:#00bfff;    /* WIN grupal (azul claro) */
+  --tr-wini:#4169E1;   /* WIN individual (oscuro, texto blanco) */
+  --tr-safe:#f8f9fa;   /* SAFE blanco */
+  --tr-duel:#ff6347;   /* DUEL */
+  --tr-elim:#ff0000;   /* ELIM */
+  --tr-purg:#460000;   /* PURG */
+  --tr-quit:#111111;   /* QUIT */
+  --tr-disq:#800000;   /* DISQ */
+  --tr-evac:#FF73F6;   /* EVAC */
+  --tr-dead:#a9a9a9;   /* gris para celdas posteriores */
+  --tr-dead-txt:#6b7280;
+  --tr-high:#add8e6;   /* HIGH */
+  --tr-low:#ffb6c1;   /* LOW */
+  --tr-in:#000080;     /* IN (comeback winners) */
+  --tr-out:#800080;    /* OUT (comeback losers) */
+  --tr-stay:#d3ffb5;   /* STAY (didn't participate) */
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Poppins,system-ui,Segoe UI,Roboto,Arial;
+  color:var(--ink);
+  background: radial-gradient(1200px 800px at 20% -10%, #fff 0%, var(--bg1) 40%, var(--bg2) 75%, var(--bg3) 100%);
+  overflow-x:hidden;
+}
+.wrap{ max-width:1180px; margin:16px auto; padding:12px 16px }
+.glass{
+  background:var(--glass); border:1px solid var(--glass-brd);
+  backdrop-filter: blur(10px) saturate(150%); border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+/* Header */
+.header{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 14px }
+.brand{ display:flex; align-items:center; gap:12px }
+.logo{ width:52px; height:52px; border-radius:12px; background:#fff; display:grid; place-items:center; font-weight:800; color:#ff7a1a }
+.h1{ font-size:24px; font-weight:800; letter-spacing:.4px }
+.step-indicator{ font-weight:800; color:#7a3a14 }
+
+/* Stage control */
+.stage{ display:none }
+.stage.active{ display:block }
+
+/* Controls */
+.control-bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0 }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:40px; padding:0 14px; border-radius:12px; border:1px solid #ffd8b0; background:#fff;
+  font-weight:800; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+.btn.primary{ background:linear-gradient(180deg,var(--accent),#ff8b38); color:#fff; border:none }
+.btn.green{ background:linear-gradient(180deg,#2ac16c,#22a557); color:#fff; border:none }
+.btn.red{ background:linear-gradient(180deg,#f97373,#e43d3d); color:#fff; border:none }
+.btn:disabled{ opacity:.5; cursor:not-allowed }
+.help{ color:var(--muted); font-weight:600; }
+#backBtn{ display:none !important } /* No retroceder */
+
+/* Grid utils */
+.grid{ display:grid; gap:14px }
+.grid.cols-7{ grid-template-columns: repeat(7, minmax(0,1fr)); }
+@media (max-width:1200px){ .grid.cols-7{ grid-template-columns: repeat(6,1fr) } }
+@media (max-width:1040px){ .grid.cols-7{ grid-template-columns: repeat(5,1fr) } }
+@media (max-width:900px){ .grid.cols-7{ grid-template-columns: repeat(4,1fr) } }
+@media (max-width:680px){ .grid.cols-7{ grid-template-columns: repeat(3,1fr) } }
+@media (max-width:480px){ .grid.cols-7{ grid-template-columns: repeat(2,1fr) } }
+
+/* Slot (icon + select) */
+.slot{
+  position:relative;
+  background:var(--tile);
+  border:1px solid #ffe4c7;
+  border-radius:16px;
+  padding:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.07);
+  transition:transform .15s ease, box-shadow .15s ease;
+  width:auto;
+  display:inline-block;
+  vertical-align:top;
+  margin:6px;
+}
+.slot:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(0,0,0,.1); }
+.icon{
+  position:relative; width:120px; height:120px; aspect-ratio:1/1; border-radius:14px;
+  background:linear-gradient(180deg,#fff6ea,#ffffff);
+  border:1px solid #ffcfa2; display:grid; place-items:center; overflow:hidden; margin:0 auto 8px;
+}
+.icon img{ position:relative; z-index:0;  width:100%; height:100%; object-fit:cover; object-position:center; display:block; border-radius:inherit }
+.icon .placeholder{
+  width:56px; height:56px; border-radius:12px; background:#ffe7c6; display:grid; place-items:center;
+  font-size:18px; font-weight:800; color:#b25a0c;
+}
+.slot .name{ font-weight:800; font-size:13px; text-align:center; margin:4px 0 6px; }
+.slot select{
+  width:100%; height:34px; padding:0 8px; border:1px solid #ffd9b7; border-radius:10px; background:#fff;
+  font-weight:700; font-size:13px;
+}
+
+/* Teams row */
+.teams-row{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-top:10px }
+.teams-box{ display:flex; flex-direction:column; gap:6px; font-weight:800; color:#7a3a14 }
+.teams-box select{
+  min-width:220px; height:42px; border-radius:12px; border:1px solid #ffd8b0; background:#fff;
+  padding:0 12px; font-weight:800;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+
+/* Team boards */
+.team-board .team-row{ margin:12px 0; }
+.team-title{ font-size:18px; font-weight:800; margin:0 0 8px 6px }
+.team-row .grid{ grid-template-columns: repeat(6, minmax(0,1fr)); }
+#stage-redis2 .team-row .grid{ grid-template-columns: repeat(7, minmax(0,1fr)) }
+
+/* Chips & minis */
+.chips{ display:flex; gap:8px; flex-wrap:wrap; }
+.pill{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:#fff; border:1px solid #ffd8b0; font-weight:700; }
+.av-mini{ width:28px; height:28px; border-radius:8px; object-fit:cover; background:#ffe8cd; display:block }
+
+/* Bonju */
+.bonju .pill{ padding:10px 12px }
+.bonju .av-mini{ width:36px; height:36px; border-radius:10px }
+.bonju strong{ font-size:16px }
+.bonju .small{ font-size:16px; line-height:1.6 }
+
+/* Track Record */
+.trk{ overflow:auto; background:#fff; border:1px solid #ffd8b0; border-radius:14px; padding:8px; }
+.table{ border-collapse:collapse; width:auto; table-layout:fixed }
+.table th, .table td{ border:1px solid #a9a9a9; padding:6px 8px; text-align:center; font-weight:800; font-size:13px; }
+.table th{ background:#fff7ee }
+.cell{ border-radius:0; display:block; width:100%; padding:6px 0; min-width:0; font-weight:800 }
+.cell.win  { background:var(--tr-win);  color:#00304c }
+.cell.wini { background:var(--tr-wini); color:#fff }
+.cell.safe { background:var(--tr-safe); color:#1f2937 }
+.cell.duel { background:var(--tr-duel); color:#fff }
+.cell.elim { background:var(--tr-elim); color:#000 }
+.cell.purg { background:var(--tr-purg); color:#fff }
+.cell.quit { background:var(--tr-quit); color:#fff }
+.cell.disq { background:var(--tr-disq); color:#fff }
+.cell.evac { background:var(--tr-evac); color:#111 }
+.cell.dead { background:var(--tr-dead); color:var(--tr-dead-txt) }
+.cell.high { background:var(--tr-high); color:#111 }
+.cell.low { background:var(--tr-low); color:#111 }
+.cell.in   { background:var(--tr-in); color:#fff }
+.cell.out  { background:var(--tr-out); color:#fff }
+.cell.stay { background:var(--tr-stay); color:#111 }
+.cell.champ{ background:#ffd700; color:#000 }
+.cell.run  { background:#c0c0c0; color:#000 }
+.trk table.table th:nth-child(n+3), .trk table.table td:nth-child(n+3){ width:46px; padding:0; white-space:nowrap; }
+.trk table.table td:nth-child(n+3) .cell{
+  display:block; width:100%; height:100%;
+  padding:6px 0; margin:0; box-sizing:border-box; border:none;
+}
+.trk table.table th.final, .trk table.table td.final{ width:220px; }
+.trk table.table th:nth-child(1), .trk table.table td:nth-child(1){
+  width:40px; max-width:40px; white-space:nowrap;
+}
+.trk table.table th:nth-child(2), .trk table.table td:nth-child(2){
+  width:160px; max-width:160px; white-space:nowrap; text-align:left; padding-left:10px;
+}
+
+.hide{ display:none !important }
+.note{ color:#7a3a14; font-weight:700; }
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:10;
+  background:#111; color:#fff; font-weight:800; padding:10px 14px; border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,.25);
+  display:none;
+}
+.toast.show{ display:block }
+
+/* Duel screen darker */
+#stage-5{
+  background: radial-gradient(900px 600px at 30% -10%, #1a0000 0%, #0b0000 40%, #000 100%);
+  color:#f8fafc; border-radius:20px;
+}
+#stage-5 .pill{ background:#111; color:#f8fafc; border-color:#333; }
+#stage-5 .btn.red{ background:linear-gradient(180deg,#ff5a5a,#a30000); }
+
+/* Vests */
+#vestsGrid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:14px; justify-items:center }
+#vestsGrid .slot{ margin:0 auto }
+
+/* ===== Ribbon NOMINADO/SALVADO ===== */
+.badge-nom,.badge-save{
+  position:absolute; top:-12px; left:50%;
+  transform:translateX(-50%) rotate(-3deg);
+  background:transparent; color:var(--danger);
+  font-family:'Komika Axis','Rubik',Poppins,Arial,sans-serif;
+  font-size:22px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  padding:2px 10px; border-radius:999px; white-space:nowrap;
+  display:none; pointer-events:none;
+  z-index:5;                 /* ensure above the image */
+  text-shadow:none;          /* no colored border */
+  -webkit-text-stroke:0;     /* remove stroke */
+  animation:ribbon-pop .25s ease-out;
+}
+.badge-save{ color:#15803d }
+@keyframes ribbon-pop{
+  from{ transform:translateX(-50%) translateY(-6px) scale(.95) rotate(-6deg); opacity:.0 }
+  to{   transform:translateX(-50%) translateY(0)    scale(1)    rotate(-3deg); opacity:1 }
+}
+/* simulated white outline around letters */
+  -webkit-text-stroke: 3px #FFFDFA;
+  text-shadow:
+    1px 0 #FFFDFA, -1px 0 #FFFDFA, 0 1px #FFFDFA, 0 -1px #FFFDFA,
+    2px 2px #FFFDFA, -2px 2px #FFFDFA, 2px -2px #FFFDFA, -2px -2px #FFFDFA;
+  animation:ribbon-pop .25s ease-out;
+}
+.badge-save{ color:#15803d }
+@keyframes ribbon-pop{
+  from{ transform:translateX(-50%) translateY(-6px) scale(.95) rotate(-6deg); opacity:.0 }
+  to{   transform:translateX(-50%) translateY(0)    scale(1)    rotate(-3deg); opacity:1 }
+}
+
+
+/* Vests groups for Phase 1 */
+.vests-group{ width:100%; margin-bottom:12px }
+.vests-title{ font-weight:800; margin:6px 0 6px 4px; color:#7a3a14 }
+
+/* Minor helpers */
+.small{ font-size:12px; color:#6b7280 }
+
+/* Episode Events / Formulas */
+.events{ margin-top:10px }
+.events .ev-title{ font-weight:800; margin:8px 0 4px 2px; color:#7a3a14 }
+.ev-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px; border:1px solid #ffd8b0; background:#fff; border-radius:12px; margin:6px 0 }
+.ev-row .txt{ font-weight:700 }
+.ev-row .muted{ color:#6b7280; font-weight:700 }
+.ev-group{ margin-top:8px }
+.ev-sub{ font-size:14px; font-weight:800; color:#7a3a14; margin:6px 0 2px 2px }
+.ev-vs{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+.ev-vs .vs{ font-weight:900 }
+
+
+.logo img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+
+.brand .h1,.brand .step-indicator{margin-left:6px}
+
+/* ===== Duelo: animaciones y estilos ===== */
+#duelResults.reveal-panel {
+  animation: duelPanelIn .35s ease-out both;
+}
+
+@keyframes duelPanelIn {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);  opacity: 1; }
+}
+
+/* Chips con revelado escalonado */
+.pill.reveal {
+  animation: pillPop .70s ease-out both;
+}
+
+@keyframes pillPop {
+  0%   { transform: translateY(10px) scale(0.98); opacity: 0; filter: blur(2px); }
+  60%  { transform: translateY(-2px) scale(1.01); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Último lugar como "botón" rojo oscuro */
+.pill.lose {
+  background: #5d0a0a;           /* rojo oscuro */
+  color: #bd0019;
+  border: 1px solid #3b0707;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset, 0 6px 16px rgba(0,0,0,0.35);
+}
+.pill.lose:hover { filter: brightness(1.05); }
+.pill.lose::before {
+  content: "ELIMINADO/A — ";
+  font-weight: 700;
+  margin-right: 2px;
+  opacity: 0.9;
+}
+
+/* Opcional: SAFE en verde suave para contraste */
+.pill.safe {
+  background: #133a19;
+  color: #dff6e3;
+  border: 1px solid #0e2a13;
+}
+
+/* === Textos SOLO para el Juego de Llaves (no toca el duelo) === */
+#keysGameBox .pill.safe::before {
+  content: "SALVADO/A — ";
+  font-weight: 700;
+  margin-right: 2px;
+  opacity: 0.9;
+}
+#keysGameBox .pill.lose::before {
+  content: "NOMINADO/A — ";
+  font-weight: 700;
+  margin-right: 2px;
+  opacity: 0.9;
+}
+
+/* ===== Awards Modal ===== */
+#awardsOverlay{
+  position:fixed; inset:0; z-index:9999;
+  background: rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center;
+}
+#awardsPanel{
+  background:#fff7ee; color:#1f2937; max-width:980px; width:92%;
+  border-radius:18px; padding:18px; border:1px solid #ffd8b0;
+  box-shadow:0 20px 50px rgba(0,0,0,.35);
+}
+#awardsPanel h3{ margin:0 0 10px 0; font-weight:800; color:#7a3a14 }
+.awards-grid{
+  display:grid; gap:14px;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+}
+@media (max-width:760px){
+  .awards-grid{ grid-template-columns: repeat(2,1fr); }
+}
+.award-card{
+  position:relative;
+  background:#fff; border:1px solid #ffd8b0; border-radius:16px;
+  padding:12px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
+}
+.award-emoji{
+  position:absolute; top:-10px; right:-10px; font-size:22px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.2));
+}
+.award-title{ font-weight:900; text-align:center; }
+.award-avatars{ display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap }
+.award-avatars .pill{ margin:0 } /* reusa 'chip' como avatar compacto */
+
+
+</style>
+<link href="https://fonts.cdnfonts.com/css/komika-axis" rel="stylesheet">
+</head>
+<body>
+
+<header class="wrap glass header">
+  <div class="brand">
+    <div class="logo">
+  <img src="personajes/logo.png" alt="Logo">
+</div>
+    <div>
+      <div class="h1">The Xpedition — Simulador</div>
+      <div class="step-indicator" id="stepName">Elección de elenco, equipos y comeback</div>
+    </div>
+  </div>
+  <div class="control-bar">
+    <button class="btn" id="backBtn" disabled>← Atrás</button>
+    <button class="btn" id="homeBtn" type="button">THE XPEDITION - PÁGINA</button>
+    <button class="btn primary" id="nextBtn" disabled>Continuar →</button>
+  </div>
+</header>
+
+<!-- ===== PASO 1 ===== -->
+<section class="wrap glass stage active" id="stage-1">
+  <h3 class="note">Elenco (elige 20 Participantes)</h3>
+  <div class="grid cols-7" id="castGrid"></div>
+
+  <div class="control-bar">
+    <span class="help" id="castCountHelp">0/20 seleccionados</span>
+    <button class="btn" id="randomCast">Random Cast</button>
+  </div>
+
+  <div class="teams-row">
+    <label class="teams-box">Equipo 1
+      <select id="team1"></select>
+    </label>
+    <label class="teams-box">Equipo 2
+      <select id="team2"></select>
+    </label>
+    <label class="teams-box">Equipo 3
+      <select id="team3"></select>
+    </label>
+    <label class="teams-box">Formato de regreso
+      <select id="comeback">
+        <option value="">— Selecciona —</option>
+        <option>Duelos</option>
+        <option>Estrellas</option>
+      </select>
+    </label>
+    <div style="flex:1"></div>
+    <button class="btn" id="randomTeams" title="Asigna 3 equipos aleatorios">Random Equipos</button>
+  </div>
+</section>
+
+<!-- ===== PASO 2: Distribución 3 equipos ===== -->
+
+<section class="wrap glass stage" id="stage-purge">
+  <h3 class="note">La Purga</h3>
+  <div id="purgeCastGrid" class="cast-grid" style="display:flex;flex-wrap:wrap;gap:10px;row-gap:10px"></div>
+  <div class="glass" id="purgeNarr">
+    <h4>Presentación</h4>
+    <div class="row" style="align-items:center; gap:10px;">
+      <div id="bonjuChip"></div>
+      <div class="txt">Bienvenidos participantes a la primera purga de The Xpedition. Si desean formar parte de la temporada, tendrán que ganárselo. En este desafío haremos 4 etapas, una por cada elemento: <b>Aire</b> — <b>Agua</b> — <b>Tierra</b> — <b>Fuego</b>.</div>
+    </div>
+    <div class="control-bar"><button class="btn primary" id="purgeStartBtn">Empezar la purga</button></div>
+  </div>
+  <div id="purgeResults" class="glass" style="margin-top:10px; min-height:120px;"></div>
+  <div class="control-bar"><button class="btn" id="purgeNextBtn" style="display:none">Siguiente etapa →</button></div>
+</section>
+<section class="wrap glass stage" id="stage-2">
+  <h3 class="note" id="teamsTitle">Distribuye a los 20 participantes</h3>
+  <div class="team-board" id="teamBoard3"></div>
+  <div class="control-bar">
+    <button class="btn" id="fillRandom3">Random distribuir</button>
+    <button class="btn" id="clearTeams">Vaciar</button>
+    <button class="btn green" id="confirmTeams3" disabled>Confirmar distribución</button>
+  </div>
+</section>
+
+<!-- ===== PASO 3: Reto + Narrativa ===== -->
+<section class="wrap glass stage" id="stage-3">
+  <h3 class="note">Elige el tipo de reto</h3>
+  <div class="control-bar">
+    <select id="challengeSelect">
+      <option value="">— Selecciona —</option>
+      <option>Rápidez</option><option>Estrategia</option><option>Creatividad</option><option>Inteligencia</option>
+      <option>Agilidad</option><option>Búsqueda</option><option>Duelos</option><option>Moda</option>
+      <option>Música</option><option>Cultura & Conocimiento</option><option>Show de Talentos</option>
+      <option>Rap</option><option>Town of Salem</option><option>Noticiero</option>
+    <option>Suerte</option><option>Bonju Chef</option><option>¿Quién mató a Bonju?</option><option>Bonju Drag Race</option><option>Top Model</option>
+          <option>Wipeout 💦</option>
+          <option>Expedición Turística en la Antártida</option>
+          <option>Batalla de Baile</option>
+          <option>Covers</option>
+          <option>Sillas Musicales</option>
+          <option>Entrevista de Trabajo</option>
+          <option>Romper Hielos</option>
+       <option>Excluir</option>
+       <option>Roba un Bonjuroit</option>
+          <option>La Bomba</option></select>
+    <button class="btn primary" id="runChallenge" disabled>Generar reto</button>
+    <button class="btn" id="randomChallenge">Random</button>
+  </div>
+
+  <div class="chips" id="challengeSummary" style="margin-top:6px"></div>
+
+  <div class="bonju" id="bonjuBox" style="display:none;margin-top:8px">
+    <div class="pill"><img id="bonjuImg" alt="Bonju" class="av-mini" /><strong>Bonju</strong></div>
+    <div class="small" id="bonjuTxt"></div>
+  </div>
+  <div id="cbTopElims" class="chips hide" style="margin-top:8px"></div>
+  <div id="finalTop4" class="chips hide" style="margin-top:8px"></div>
+  <div id="episodeEvents" class="events hide">
+    <h4 class="ev-title">Eventos del episodio</h4>
+    <div id="eventsList"></div>
+  </div>
+
+
+  <div id="winnersBox" class="hide">
+    <h4 class="note" id="winnersTitle">Inmunidad</h4>
+    <div class="chips" id="immuneTeamChip"></div>
+    <div class="chips" id="immuneList"></div>
+    <div class="control-bar"><button class="btn primary" id="goVests">Asignar chalecos →</button></div>
+  </div>
+</section>
+
+<!-- ===== PASO 4: Chalecos ===== -->
+<section class="wrap glass stage" id="stage-4">
+  <h3 class="note" id="vestsTitle">Asigna chalecos</h3>
+  <div class="help" id="vestsHelp"></div>
+  <div id="vestsGrid"></div>
+  <button class="btn" id="randomVests">Random Chalecos</button>
+
+  <!-- Caja del Juego de Llaves (se muestra solo en Fase 3) -->
+  <div id="keysGameBox" class="hide"></div>
+
+  <div class="control-bar">
+    <button class="btn" id="runKeysGame" disabled>Realizar Juego de Llaves</button>
+    <button class="btn green" id="confirmVests" disabled>Ir al duelo de eliminación →</button>
+  </div>
+</section>
+
+<!-- ===== PASO 5: Duelo ===== -->
+<section class="wrap glass stage" id="stage-5">
+  <h3 class="note">Duelo de eliminación</h3>
+  <div class="help">Nominados:</div>
+  <div class="chips" id="duelNominees"></div>
+  <div class="control-bar"><button class="btn red" id="seeResults">Ver resultados</button></div>
+  <div id="duelResults" class="hide">
+    <div class="chips" id="duelRanking"></div>
+    <div class="control-bar"><button class="btn primary" id="toTrack">Ver Track Record →</button></div>
+  </div>
+</section>
+
+<!-- ===== PASO 6: Track Record ===== -->
+<section class="wrap glass stage" id="stage-6">
+  <h3 class="note" id="trTitle">Track Record — Episodio 1</h3>
+  <div class="trk">
+    <table class="table" id="trkTable">
+      <thead id="trkHead"></thead>
+      <tbody id="trkBody"></tbody>
+    </table>
+  </div>
+  <div class="control-bar">
+    <button class="btn primary" id="nextEpisode">Siguiente episodio →</button>
+    <button class="btn" id="restartSim" style="display:none">SIMULAR DE NUEVO</button>
+<button class="btn" id="viewAwards" style="display:none">Ver Premios 🏆</button>
+  </div>
+</section>
+
+<!-- ===== Redistribución 2 equipos (elige 2 que avanzan) ====== -->
+<section class="wrap glass stage" id="stage-redis2">
+  <h3 class="note" id="teamsTitle2">Elige los 2 equipos que avanzan y redistribuye (7 y 7)</h3>
+
+  <div class="teams-row" id="advSelector">
+    <label class="teams-box"> Los ganadores del Desafío de Capitanes construirán sus nuevos equipos desde 0.
+      <select id="adv1"></select>
+    </label>
+    <button class="btn" id="confirmAdv" disabled>Confirmar equipos que avanzan</button>
+  </div>
+
+  <div class="team-board" id="teamBoard2"></div>
+  <div class="control-bar">
+    <button class="btn" id="fillRandom2">Random distribuir</button>
+    <button class="btn green" id="confirmTeams2" disabled>Confirmar distribución →</button>
+  </div>
+</section>
+
+<!-- ===== COMEBACK preview (extra pantalla) ===== -->
+<section class="wrap glass stage" id="stage-cb">
+  <h3 class="note">COMEBACK — Eliminados (1.º a 8.º)</h3>
+  <div class="chips" id="cbList"></div>
+  <div class="control-bar">
+    <button class="btn primary" id="cbContinue">Continuar al reto →</button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === SONGS list for music-based challenges ===
+if (typeof window.SONGS === 'undefined') window.SONGS = ["Sugar On My Tongue - Tyler The Creator", "Dove - Pillar Point", "It’s My Life - Bonjovi", "Level Up - Ciara", "Paparazzi - Lady Gaga", "Celebrity Skin - Hole", "Baby One More Time - Britney Spears", "Come & Get It - Selena Gomez", "Calocha - Barbie Ricán", "Beat It - Michael Jackson", "Deutschland - Rammstein", "Bring Me To Life - Evanescence", "What’s Your Pleasure? - Jessie Ware", "The Rhythm Of The Night - Corona", "Esperma - BonjuVEVO", "Maniac - Michael Sembello", "All Hands On Deck - Tinashe", "Round We Go - Big Sister", "The Bad Touch - Bloodhound Gang", "Family Affair - Mary J. Blige", "Maria - HWASA", "Last Friday Night - Katy Perry", "Houdini - Dua Lipa", "23 - Mike WilLL Made-It, Miley Cyrus, Whiz Khalifa", "Love Really Hurts Without You - Billy Ocean", "Swalla- Jason Derulo, Nicki Minaj, Ty Dolla $ign", "Lose Control - Missy Elliot, Ciara", "4 Minutes - Madonna, Justin Timberlake", "MOVE - TAEMIN", "Hip - MAMAMOO", "Streets - Doja Cat", "Side Effects- Stray Kids", "Real Things - Javine", "Pump Up The Jam - Technotronic", "212 - Azealia Banks", "Baby Love - Petite Meller", "Kill V. Maim - Grimes", "Tongue - MNEK", "Snakeskin- Rina Sawayama", "Blinding Lights - The Weeknd", "Super Bass - Nicki Minaj", "The Less I Know The Better - Tame Impala", "Acid Rain - Lorn", "Baby Shark - Babay", "What Does The Fox Say? - Ylvis", "Macho Man - Village People", "Destination Calabria (Radio Edit) - Crystal Waters", "I Love Hollywood! - Slayyyter", "MIDDLE OF THE NIGHT - Elley Duhé", "My Mind - Yebba", "Calimenio - Grupo Bip", "El Baile del Gorila - Melody", "One Word - Kelly Osbourne", "Monolith - Twin Tribes", "Flutes - Hot Chip", "Sextape - Deftones", "Brother Louie - Modern Talking", "Come As You Are - Nirvana", "DARE - Gorillaz", "Black Velvet - Alannah Myles", "Umbrella - Rihanna"];
+
+/* ====== Datos ====== */
+const ALL_PARTICIPANTS = [
+"Dios", "Adriana Pereira", "Alexandro", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Azael", "Azealia Midnight", "Bayron", "Beto", "Bruno Macri", "Bryan Montalvo", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Dani", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Kim Camila", "Lalamila", "Leandro", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Paula Garcia", "Paulis Queen", "Peggy", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
+
+
+];
+
+/* ====== Géneros (pronombres para badges) ====== */
+function __gNorm(s){
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .toLowerCase()
+    .trim();
+}
+
+const GENDER_MAP = (()=> {
+  const raw = [
+    ["Adriana Pereira","F"],["Alexandro","M"],["Alice","F"],["Amanda Lewis","F"],["Anderson Moreno","M"],["Andromeda","F"],["Ari Salgado","M"],
+    ["Azael","M"],["Azealia Midnight","F"],["Bayron","M"],["Beto","M"],["Bruno Macri","M"],["Bryan Montalvo","M"],
+    ["Catalina","F"],["Christopher","M"],["Cocomong","M"],["Coronel","M"],["Daelly","F"],["Dani","F"],["Dios","M"],
+    ["Doppel","F"],["Dua Lingo","F"],["Eduard","M"],["Eduardo","M"],["Edna Droga","F"],["Elian","M"],["Elvin","M"],
+    ["Emanuel","M"],["Emmy Mango","F"],["Eris Midnight","M"],["Esteban","M"],["Felix","M"],["Gabriel Sab","M"],
+    ["Garnet","M"],["Greg","M"],["Ian Esteban","M"],["Ignacio Ricci","M"],["Isabel","F"],["Ivan Serrano","M"],
+    ["Ivy","F"],["Iñaella Rose","F"],["Julián","M"],["Kim Camila","F"],["Lalamila","F"],["Leandro","M"],
+    ["Lucas Mendez","M"],["Luciano","M"],["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Nahuee","M"],["Nicki Gorilaj","F"],
+    ["Nidia Mirella","F"],["Ocean Harmony","F"],["Oscar","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pier","M"],["Plastique Doll","F"],
+    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],
+    ["Stalin Mango","M"],["Vita","M"],["Vitany Glambert","F"],["Ximena","F"],["Xina Ro","F"]
+  ];
+  const m = {};
+  raw.forEach(([n,g]) => { m[__gNorm(n)] = g; });
+  return m;
+})();
+
+function genderSuffix(name){
+  const g = GENDER_MAP[__gNorm(name)] || "M"; 
+  return (g === "F") ? "A" : "O";
+}
+
+function getRosterOrder(){
+  // Si tenemos el cast completo (20), usamos ese orden
+  let base = (Array.isArray(window.roster20) && window.roster20.length === 20)
+    ? window.roster20.slice()
+    : (activePlayers || []).concat(eliminated || []);
+  // Mover purgados al final (en su mismo orden)
+  if (window._seasonPurgados && window._seasonPurgados.size){
+    const purg = base.filter(n => window._seasonPurgados.has(norm(n)));
+    const rest = base.filter(n => !window._seasonPurgados.has(norm(n)));
+    base = rest.concat(purg);
+  }
+  return base;
+}
+function isEligibleForComeback(name){
+  return !(window._seasonPurgados && window._seasonPurgados.has(norm(name)));
+}
+
+const TEAMS = ["Pingüinos","Focas","Krills","Leones","Serpientes","Cebras","Guepardos","Escorpiones"];
+const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bonju.jpeg","Personajes/bonju.png","Personajes/bonju.jpg","Personajes/bonju.jpeg","Personajes/Bonju.png","Personajes/Bonju.jpg","Personajes/Bonju.jpeg"];
+
+/* ====== Helpers ====== */
+/* ====== Custom Additions ====== */
+
+/* === EVENTOS PERSONALIZADOS — INTERACCIONES / ESPECIALES / GIMNASIO === */
+(function(){
+  // -------- helpers seguros (no pisan nada tuyo) --------
+  const $id = (s)=> document.getElementById(s);
+  const getAliveSafe = ()=> (typeof getAlive==="function" ? getAlive() : (window.activePlayers||[])).slice();
+  const has = (arr, name)=> arr.some(n => (n||"").normalize("NFC") === (name||"").normalize("NFC"));
+  const allActive = (names)=> {
+    const alive = getAliveSafe();
+    return names.every(n => has(alive, n));
+  };
+
+  function chipOnly(name){
+    // usa tu chip(name, label) para icono+nombre
+    if (typeof chip === "function") return chip(name, name);
+    const b = document.createElement("strong"); b.textContent = name; return b; // fallback
+  }
+
+  // Construye una fila con secuencia de [texto / chip(nombre) / texto / chip(nombre) ...]
+  function addPartsRow(parts){
+    const list = $id("eventsList"); if(!list) return;
+    const row = document.createElement("div"); row.className = "ev-row";
+    parts.forEach(p=>{
+      if (typeof p === "string"){
+        const t = document.createElement("span"); t.className = "txt"; t.textContent = p;
+        row.appendChild(t);
+      } else if (p && p.chip){
+        row.appendChild(chipOnly(p.chip));
+      }
+    });
+    list.appendChild(row);
+  }
+
+  // Una sola persona (icono+nombre a la izquierda + texto)
+  function addSolo(name, txt){
+    addPartsRow([{chip:name}, ` ${txt}`]);
+  }
+
+  function ensureEventsBox(){
+    const box = $id("episodeEvents"); if (box) box.classList.remove("hide");
+  }
+
+  function currentChallengeType(){
+    const sel = $id("challengeSelect");
+    const opt = sel?.options?.[sel.selectedIndex];
+    return (opt && opt.textContent || "").trim();
+  }
+
+  // --------- estado de temporada (solo contadores de frecuencia) ----------
+  if(!window.__ce_state){
+    window.__ce_state = {
+      groupUsed: 0,   // “en grupo” máx 2 por partida
+      soloUsed:  0,   // “en solitario” máx 2 por partida
+      seasonSeen: new Set()
+    };
+  }
+
+  // ====================== EN GRUPO (máx 2 por partida) ======================
+  // Cada item: { key, needs:[...], parts:[ ... {chip:"Nombre"} ... "texto" ... ] }
+  const GROUP_EVENTS = [
+    {key:"nahuee-nicki", needs:["Nahuee","Nicki Gorilaj"], parts:[{chip:"Nahuee"}," Le enseño a ",{chip:"Nicki Gorilaj"}," a disfrazarse de Saw para halloween"]},
+    {key:"edna-ivy", needs:["Edna Droga","Ivy"], parts:[{chip:"Edna Droga"}," se puso a fumar detrás de cámaras con ",{chip:"Ivy"}]},
+    {key:"lucas-adriana-turnitup", needs:["Lucas Mendez","Adriana Pereira"], parts:[{chip:"Lucas Mendez"}," le dijo a ",{chip:"Adriana Pereira"}," que si no lo ayudaba la iba a ir a buscar a su casa y sacarle la Turn It Up."]},
+    {key:"eduard-renata-pan", needs:["Eduard","Renata"], parts:[{chip:"Eduard"}," le enseño hacer panes a ",{chip:"Renata"}]},
+    {key:"bruno-paulis-drag", needs:["Bruno Macri","Paulis Queen"], parts:[{chip:"Bruno Macri"}," le dijo a ",{chip:"Paulis Queen"}," que drag race cambió su vida."]},
+    {key:"renata-xina-presa", needs:["Renata","Xina Ro"], parts:[{chip:"Renata"}," persiguió a ",{chip:"Xina Ro"}," como su presa."]},
+    {key:"bruno-nahuee-disparo", needs:["Bruno Macri","Nahuee"], parts:[{chip:"Bruno Macri"}," le disparó a ",{chip:"Nahuee"}]},
+    {key:"bruno-beto-disparo", needs:["Bruno Macri","Beto"], parts:[{chip:"Bruno Macri"}," le disparó a ",{chip:"Beto"}]},
+    {key:"plastique-luciano-bully", needs:["Plastique Doll","Luciano"], parts:[{chip:"Plastique Doll"}," le hizo Bullyng a ",{chip:"Luciano"}]},
+    {key:"mary-isabel-disfraz", needs:["Mary Hao","Isabel"], parts:[{chip:"Mary Hao"}," se disfrazo con ",{chip:"Isabel"}," de Gokuh y Naruto"]},
+    {key:"renata-luciano-calzon", needs:["Renata","Luciano"], parts:[{chip:"Renata"}," le hizo el calzón chino a ",{chip:"Luciano"},"."]},
+    {key:"alice-mary-ouija", needs:["Alice","Mary Hao"], parts:[{chip:"Alice"}," jugó la Ouija con ",{chip:"Mary Hao"}]},
+    {key:"alexandro-luciano-debil", needs:["Alexandro","Luciano"], parts:[{chip:"Alexandro"}," le dijo a ",{chip:"Luciano"}," que era muy débil mentalmente."]},
+    {key:"esteban-lucas-vita", needs:["Esteban","Lucas Mendez","Vita"], parts:[{chip:"Esteban"}," y ",{chip:"Lucas Mendez"}," persiguieron a ",{chip:"Vita"}," durante todo el episodio."]},
+    {key:"dani-isabel-hombra", needs:["Dani","Isabel"], parts:[{chip:"Dani"}," le dijo a ",{chip:"Isabel"}," que jamás conseguiria una hombra mejor que ella."]},
+    {key:"felix-bayron-juventud", needs:["Felix","Bayron"], parts:[{chip:"Felix"}," le subccionó la juventud a ",{chip:"Bayron"}]},
+    {key:"coronel-bryan-brokeback", needs:["Coronel","Bryan Montalvo"], parts:[{chip:"Coronel"}," jugó a secreto a la montaña con ",{chip:"Bryan Montalvo"}]},
+    {key:"alexandro-pier-pedigree", needs:["Alexandro","Pier"], parts:[{chip:"Alexandro"}," le dió Pedigree a ",{chip:"Pier"}]},
+    {key:"daelly-coronel-insinuo", needs:["Daelly","Coronel"], parts:[{chip:"Daelly"}," le insinuó a ",{chip:"Coronel"}," que lo hicieran detrás de cámaras"]},
+    {key:"julian-bryan-apoyo", needs:["Julián","Bryan Montalvo"], parts:[{chip:"Julián"}," le pidió a ",{chip:"Bryan Montalvo"}," de grabarse diciendo que lo apoyaba para una competencia."]},
+    {key:"bryan-dani-escort", needs:["Bryan Montalvo","Dani"], parts:[{chip:"Bryan Montalvo"}," le enseño a ",{chip:"Dani"}," lo que es ser una Escort de verdad"]},
+    {key:"adriana-bruno-dormida", needs:["Adriana Pereira","Bruno Macri"], parts:[{chip:"Adriana Pereira"}," le iba a decir algo a ",{chip:"Bruno Macri"}," pero se quedó dormida."]},
+    {key:"alice-pier-secuestra", needs:["Alice","Pier"], parts:[{chip:"Alice"}," secuestró a ",{chip:"Pier"}," para experimentar con el"]},
+    {key:"inaella-dani-atractivo", needs:["Iñaella Rose","Dani"], parts:[{chip:"Iñaella Rose"}," dijo que ",{chip:"Dani"}," era el hombre más atractivo de la temporada"]},
+    {key:"dani-andromeda-premios", needs:["Dani","Andromeda"], parts:[{chip:"Dani"}," le dijo ",{chip:"Andromeda"}," que tuvieran una batalla de premios pero Andromeda no tiene ninguno."]},
+    {key:"alexandro-daelly-trayectoria", needs:["Alexandro","Daelly"], parts:[{chip:"Alexandro"}," le dijo a ",{chip:"Daelly"}," que ella no tiene trayectoria."]},
+    {key:"kim-alexandro-biceps", needs:["Kim Camila","Alexandro"], parts:[{chip:"Kim Camila"}," le enseño hacer biceps a ",{chip:"Alexandro"}]},
+    {key:"kim-andromeda-gym", needs:["Kim Camila","Andromeda"], parts:[{chip:"Kim Camila"}," le dijo a ",{chip:"Andromeda"}," que si quería ser su amiga tenía que inscribirse en el gimnasio."]},
+    {key:"bruno-mary-travesti", needs:["Bruno Macri","Mary Hao"], parts:[{chip:"Bruno Macri"}," le dijo a ",{chip:"Mary Hao"}," que el también quería ser travesti."]},
+    {key:"vitany-alexandro-doblecara", needs:["Vitany Glambert","Alexandro"], parts:[{chip:"Vitany Glambert"}," fue acusada por los fans de ",{chip:"Alexandro"}," de ser una doble cara."]},
+    {key:"ocean-peggy-travesti", needs:["Ocean Harmony","Peggy"], parts:[{chip:"Ocean Harmony"}," le dijo a ",{chip:"Peggy"}," que ella también era travesti en Facebook."]},
+    {key:"silvanya-rafael-boicot", needs:["Silvanya D'Lemberth","Rafael"], parts:[{chip:"Silvanya D'Lemberth"}," le dijo a ",{chip:"Rafael"}," que hicieran un boicot contra Bonju."]},
+    {key:"coronel-mary-hombre", needs:["Coronel","Mary Hao"], parts:[{chip:"Coronel"}," le dijo a ",{chip:"Mary Hao"}," que no estaba preparada para un hombre como el."]},
+    {key:"lucas-bayron-m4", needs:["Lucas Mendez","Bayron"], parts:[{chip:"Lucas Mendez"}," le dijo a ",{chip:"Bayron"}," que lo iba a buscar y m4t4rlo."]},
+    {key:"christopher-bayron-panales", needs:["Christopher","Bayron"], parts:[{chip:"Christopher"}," se cagó los pañales con ",{chip:"Bayron"}]},
+    {key:"renzo-isabel-aceptada", needs:["Renzo","Isabel"], parts:[{chip:"Renzo"}," le dijo a ",{chip:"Isabel"}," que había un lugar donde ella sería aceptada."]},
+    {key:"eris-azealia-habla", needs:["Eris Midnight","Azealia Midnight"], parts:[{chip:"Eris Midnight"}," junto a ",{chip:"Azealia Midnight"}," no se callaron en todo el día."]},
+    {key:"stalin-emmy-jugo", needs:["Stalin Mango","Emmy Mango"], parts:[{chip:"Stalin Mango"}," hizo Jugo con ",{chip:"Emmy Mango"}]},
+    {key:"kim-pier-karate", needs:["Kim Camila","Pier"], parts:[{chip:"Kim Camila"}," Uso sus habilidades en karate para darle una paliza a ",{chip:"Pier"}]},
+    {key:"lucas-nicki-enojado", needs:["Lucas Mendez","Nicki Gorilaj"], parts:[{chip:"Lucas Mendez"}," se enojó porque ",{chip:"Nicki Gorilaj"}," estaba en la temporada"]},
+    {key:"marcos-renata-margarita", needs:["Marcos","Renata"], parts:[{chip:"Marcos"}," le hizo una Margarita a ",{chip:"Renata"}]},
+    {key:"ivan-greg-taylor", needs:["Ivan Serrano","Greg"], parts:[{chip:"Ivan Serrano"}," hablo con ",{chip:"Greg"}," y le dijó que Taylor también cambió su vida"]}
+  ];
+
+  // ============= MULTI-ALIANZAS (también cuentan como “en grupo”) =============
+  const MULTI_EVENTS = [
+    {key:"xina-andromeda-peggy-isabel", needs:["Xina Ro","Andromeda","Peggy","Isabel"], parts:[{chip:"Xina Ro"}," le dijo a ",{chip:"Andromeda"},", ",{chip:"Peggy"}," e ",{chip:"Isabel"}," que jamás volvería a confiar en ellas."]},
+    {key:"coronel-dani-bryan-alianza", needs:["Coronel","Dani","Bryan Montalvo"], parts:[{chip:"Coronel"}," le dijo a ",{chip:"Dani"}," y ",{chip:"Bryan Montalvo"}," que hicieran una alianza de hombres"]},
+    {key:"bruno-lucas-adriana-alianza", needs:["Bruno Macri","Lucas Mendez","Adriana Pereira"], parts:[{chip:"Bruno Macri"}," le dijo a ",{chip:"Lucas Mendez"}," y ",{chip:"Adriana Pereira"}," que hicieran una alianza pero ",{chip:"Adriana Pereira"}," se quedó dormida."]},
+    {key:"kim-luciano-coronel-marcos-circo", needs:["Kim Camila","Luciano","Coronel","Marcos"], parts:[{chip:"Kim Camila"}," le dijo a ",{chip:"Luciano"},", ",{chip:"Coronel"}," y ",{chip:"Marcos"}," que eran un circo."]},
+    {key:"peggy-isabel-andromeda-baneo", needs:["Peggy","Isabel","Andromeda"], parts:[{chip:"Peggy"}," le dijo a ",{chip:"Isabel"}," que ",{chip:"Andromeda"}," no formaría parte de su grupo nunca más."]}
+  ];
+
+  // ====================== EN SOLITARIO (máx 2 por partida) ======================
+  const SOLO_EVENTS = [
+    ["Alexandro","invitó a los demás a entrar a su propio concurso donde si son profesionales."],
+    ["Alice","..."],
+    ["Anderson Moreno","Dijo que le dieron permiso de mandarlos a comer m*erd* a todos."],
+    ["Andromeda","no estuvo presente en el reto porque a las 6pm apenas se despertaba."],
+    ["Ari Salgado","le dijo a Bonju que no esperaba nada de ella pero aún asi estaba decepcionado."],
+    ["Pier","Woof Woof."],
+    ["Beto","dijo que revendía cosas, pero solo era una estafa."],
+    ["Christopher","se cagó los boxers."],
+    ["Bruno Macri","le empezó a disparar a todos."],
+    ["Bryan Montalvo","dijo que reviviria su concurso de hace 57548 meses."],
+    ["Coronel","dijo que faltaban más hombres en la temporada"],
+    ["Daelly","se enojó con la producción y dijo que no era justo todo el trabajo que ella habia hecho, como: y también el de."],
+    ["Dani","persiguió a las mujeres de la temporada y se les insinuó"],
+    ["Luciano","Paso la burla y se enojó"],
+    ["Dios","sorprendió a todos con su belleza"],
+    ["Doppel","dijo que no la invitaron a la temporada y se metió por la ventana"],
+    ["Eris Midnight","expresó su seguridad en obtener el Poop of the Year"],
+    ["Felix","se hizo el amable falsamente."],
+    ["Gabriel Sab","se la pasó hablando como cotorra y no dejaba explicar a Bonju el reto."],
+    ["Iñaella Rose","preguntó por el nombre del programa."],
+    ["Isabel","colapsó y eliminó a todos de su lista de amigos en League of Legends."],
+    ["Ivy","paso la burla pero revivió 3 veces en el reto"],
+    ["Lalamila","dijo que nunca iba a confiar en nadie más."],
+    ["Leandro","se enojó porque todos dicen que es el más colapsado de la temporada"],
+    ["Lucas Mendez","fue a donde todos estaban dormidos y los obligó a escuchar la canción nueva de Cardi B"],
+    ["Marianito","dijo que la producción lo silencio."],
+    ["Xina Ro","cerró su cuenta de facebook por 3 días"],
+    ["Vita","dijo que iba a renunciar por que se aburrió cuando el reto no había sido ni explicado"],
+    ["Plastique Doll","no hizo nada en el reto y le pagó a producción por favorecerla"],
+    ["Nidia Mirella","dijo que sabía quien era Kira"],
+    ["Adriana Pereira","z z z"],
+    ["Ian Esteban","se le olvido que hoy era el reto y no hizo una Samuel"]
+  ];
+
+  // =================== ESPECIALES POR TIPO DE RETO (si coincide) ===================
+  const SPECIALS_BY_CHALLENGE = {
+    "Búsqueda": [
+      {needs:["Alexandro"], parts:[{chip:"Alexandro"}," dijo que el tenía experiencia haciendo mapas."]}
+    ],
+    "Moda": [
+      {needs:["Isabel"], parts:[{chip:"Isabel"}," hizo un look inspirado en Gokuh Moreno."]}
+    ],
+    "Rap": [
+      {needs:["Nicki Gorilaj"], parts:[{chip:"Nicki Gorilaj"}," Dijo que nadie era mejor que ella en este reto."]}
+    ],
+    "Town of Salem": [
+      {needs:["Renzo"], parts:[{chip:"Renzo"}," creo un chat con todos los que participaron en este reto"]},
+      {needs:["Elian"], parts:[{chip:"Elian"}," dijo que el era experto en este juego"]}
+    ],
+    "Entrevista de Trabajo": [
+      {needs:["Andromeda"], parts:[{chip:"Andromeda"}," se orinó cuando se enteró de que trataba el reto."]},
+      {needs:["Isabel"], parts:[{chip:"Isabel"}," salió corriendo a esconderse cuando anunciaron el reto."]}
+    ],
+    "La Bomba": [
+      {needs:["Eduardo"], parts:[{chip:"Eduardo"}," le tiraron bombas incluso cuando el reto ya había acabado."]}
+    ],
+    "Romper Hielos": [
+      {needs:["Iñaella Rose"], parts:[{chip:"Iñaella Rose"}," le intento romper el hielo a sus aliados porque no entendió el reto."]},
+      {needs:["Eduard"], parts:[{chip:"Eduard"}," se comió el hielo que sobró "]}
+    ]
+  };
+
+  // ======================== EPISODIO NARRATIVO “Gimnasio” ========================
+  // añade la opción sin tocar locks ni leer 'episode' antes de tiempo
+  function ensureGymOption(){
+    const sel = $id("challengeSelect"); if(!sel) return;
+    const label = "Gimnasio";
+    const exists = Array.from(sel.options).some(o=> (o.textContent||"").trim() === label);
+    if(!exists){
+      const opt = document.createElement("option"); opt.textContent = label; sel.appendChild(opt);
+    }
+  }
+  // difiere a final de carga del script
+  setTimeout(ensureGymOption, 0);
+
+  const GYM_BASE_LINES = [
+    (n)=> [{chip:n}," Hizo cardio"],
+    (n)=> [{chip:n}," hizo pesas"],
+    (n)=> [{chip:n}," hizo sentadillas"],
+    (n)=> [{chip:n}," intento alzar una maquína y se le salio la Renzo Rodriguez"],
+    (n)=> [{chip:n}," le cayó una pesa encima y quedo Global War"],
+    (n)=> [{chip:n}," pensó que el reto era gimnasio Pokemon y se saco las dos bolas"],
+  ];
+  const GYM_SPECIAL_DOUBLES = [
+    {needs:["Kim Camila","Eduard"], parts:[{chip:"Kim Camila"}," le enseño a ",{chip:"Eduard"}," lo que es la vida fitness."]},
+    {needs:["Kim Camila","Xina Ro"], parts:[{chip:"Kim Camila"}," le dijo a ",{chip:"Xina Ro"}," que tiene que bajar más de peso si quiere entrar a la siguiente temporada."]}
+  ];
+  const GYM_SPECIAL_SOLO = [
+    ["Andromeda","Saco su play5 en el gimnasio y se puso a jugar Genshit Impact"],
+    ["Eduard","se comió un Buñuelo"],
+    ["Coronel","dijo que este reto era pan comido para el y paso la Marcos JotoC"],
+    ["Luciano","apretó el puño de la rabia"],
+    ["Nahuee","partió el gimnasio, apenas puso un pie dentro de el."]
+  ];
+
+  // ------------------ núcleo de inyección por episodio ------------------
+  function injectCustomEvents(){
+    const list = $id("eventsList"); if(!list) return;
+    const type = currentChallengeType();
+    const alive = getAliveSafe();
+
+    // === solo-narrativa “Gimnasio” ===
+    if (type === "Gimnasio"){
+      ensureEventsBox();
+
+      // 6 líneas base (o menos, según vivos)
+      const pool = alive.length>=6 ? alive.slice().sort(()=>Math.random()-0.5).slice(0,6) : alive.slice();
+      pool.forEach((p,i)=> addPartsRow(GYM_BASE_LINES[i % GYM_BASE_LINES.length](p)));
+
+      // dobles
+      GYM_SPECIAL_DOUBLES.forEach(ev=>{
+        if (allActive(ev.needs)) addPartsRow(ev.parts);
+      });
+      // individuales
+      GYM_SPECIAL_SOLO.forEach(([n,txt])=>{
+        if (has(alive,n)) addSolo(n, txt);
+      });
+      return; // no mezclamos con más narrativa
+    }
+
+    // === GRUPALES (máx 2 por partida) ===
+    if (window.__ce_state.groupUsed < 2){
+      const candidates = GROUP_EVENTS.concat(MULTI_EVENTS).filter(ev=> allActive(ev.needs))
+        .filter(ev=> !window.__ce_state.seasonSeen.has(ev.key));
+
+      const take = Math.min(2 - window.__ce_state.groupUsed, Math.max(0, candidates.length));
+      candidates.sort(()=>Math.random()-0.5).slice(0,take).forEach(ev=>{
+        window.__ce_state.groupUsed++;
+        window.__ce_state.seasonSeen.add(ev.key);
+        addPartsRow(ev.parts);
+      });
+    }
+
+    // === INDIVIDUALES (máx 2 por partida) ===
+    if (window.__ce_state.soloUsed < 2){
+      const cand = SOLO_EVENTS.filter(([n])=> has(alive,n))
+        .filter(([n,txt])=> !window.__ce_state.seasonSeen.has("solo:"+n+":"+txt));
+      const take = Math.min(2 - window.__ce_state.soloUsed, Math.max(0, cand.length));
+      cand.sort(()=>Math.random()-0.5).slice(0,take).forEach(([n,txt])=>{
+        window.__ce_state.soloUsed++;
+        window.__ce_state.seasonSeen.add("solo:"+n+":"+txt);
+        addSolo(n, txt);
+      });
+    }
+
+    // === ESPECIALES POR RETO ===
+    const specials = SPECIALS_BY_CHALLENGE[type] || [];
+    specials.forEach(ev=>{
+      if (allActive(ev.needs)) addPartsRow(ev.parts);
+    });
+
+    ensureEventsBox();
+  }
+
+  $id("runChallenge")?.addEventListener("click", ()=> setTimeout(injectCustomEvents, 0));
+})();
+
+const USED_CHALLENGES = {};
+function incUsed(type){ USED_CHALLENGES[type]=(USED_CHALLENGES[type]||0)+1; }
+function usedCount(type){ return USED_CHALLENGES[type]||0; }
+function updateChallengeAvailability(){
+  const ep = episode;
+  const opts = Array.from(document.querySelectorAll('#challengeSelect option'));
+  opts.forEach(o=>{
+    if(!o.value && o.textContent.trim().startsWith('—')){ o.disabled=false; return; }
+    const t = o.textContent.trim();
+
+    // 🔒 Ep9 con comeback Duelos: dejar SOLO "Duelos" habilitado,
+   
+    if (ep === 9 && comebackMode === 'Duelos') {
+      o.disabled = (t !== 'Duelos');
+      return; 
+    }
+
+    let allowed = 1;
+    if (t === 'Town of Salem') allowed = 2;
+    if (t === 'Top Model' && ep < 10) { o.disabled = true; return; }
+    if (t === 'Bonju Drag Race' && ep < 10) { o.disabled = true; return; }
+    if (t === 'Excluir' && ep < 2) { o.disabled = true; return; }
+    if (t === 'Roba un Bonjuroit' && ep < 2) { o.disabled = true; return; }
+    if (t === 'Batalla de Baile' && ep >= 9) { o.disabled = true; return; }
+    if (t === 'Town of Salem' && ep >= 15) { o.disabled = true; return; }
+
+    // Por defecto: bloquear si ya alcanzó su límite de veces
+    o.disabled = usedCount(t) >= allowed;
+  });
+}
+function enforceUniqueAcrossSelects(containerSel){
+  const container = document.querySelector(containerSel);
+  if(!container) return;
+  const selects = Array.from(container.querySelectorAll('select'));
+  const chosen = new Set(selects.map(s=>s.value).filter(v=>v && !/^—/.test(v)));
+  selects.forEach(sel=>{
+    Array.from(sel.options).forEach(opt=>{
+      if(!opt.value || /^—/.test(opt.textContent)){ opt.disabled=false; return; }
+      const v = opt.value;
+      if(sel.value===v){ opt.disabled=false; } else { opt.disabled = chosen.has(v); }
+    });
+  });
+}
+// === Helpers para pintar ganadores (reusar en todos los retos nuevos) ===
+function __teamOf(name, phaseId){
+  const map = (phaseId === 1 ? (window.distribution3||{}) : (window.distribution2||{})) || {};
+  return Object.keys(map).find(t => (map[t]||[]).includes(name)) || "";
+}
+
+function __showTeamWinner(team){
+  const ph = (typeof currentPhase==="function") ? currentPhase(episode) : {id:1};
+  const map = (ph.id === 1 ? (window.distribution3||{}) : (window.distribution2||{})) || {};
+  window.immunes = (map[team]||[]).filter(n => (getAlive?.()||[]).includes(n));
+  $("#immuneTeamChip").innerHTML = `<span class="pill">Equipo ganador: <b>${team}</b></span>`;
+  $("#immuneList").innerHTML = "";
+  (window.immunes||[]).forEach(n => $("#immuneList").appendChild(chip(n, n)));
+  $("#winnersBox").classList.remove("hide");
+  updateChallengeAvailability?.();
+  window.challengeLockedEp = episode;
+  const btn = document.getElementById("runChallenge"); if (btn) btn.disabled = true;
+}
+
+function __showIndividualWinners(names){
+  // Por diseño del simulador: inmunidad doble en fases 3/4
+  window.immunes = (names||[]).slice(0,2);
+  $("#immuneTeamChip").innerHTML = `<span class="pill">Juego individual</span>`;
+  $("#immuneList").innerHTML = "";
+  (window.immunes||[]).forEach(n => $("#immuneList").appendChild(chip(n, n)));
+  $("#winnersBox").classList.remove("hide");
+  updateChallengeAvailability?.();
+  window.challengeLockedEp = episode;
+  const btn = document.getElementById("runChallenge"); if (btn) btn.disabled = true;
+}
+
+
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
+const toast = (t)=>{ const el=$("#toast"); el.textContent=t; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1800); };
+const norm = s => (s||"").normalize("NFC").trim();
+const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ñ/g,"n").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();
+function imgFor(name){ const s=slug(name); return [`personajes/${s}.png`,`personajes/${s}.jpg`,`personajes/${s}.jpeg`]; }
+function makeInitials(name){ const d=document.createElement("div"); d.className="placeholder"; const letters=(name.split(/\s+/).map(s=>s[0]).join("").slice(0,2) || "?").toUpperCase(); d.textContent=letters; return d; }
+function loadImg(el, candidates, fallbackText=""){ let i=0; function next(){ if(i>=candidates.length){ el.replaceWith(makeInitials(fallbackText)); return; } const t=new Image(); t.onload=()=>{ el.src=t.src; }; t.onerror=()=>{ i++; next(); }; t.src=candidates[i]; } next(); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffle(arr){ return arr.slice().sort(()=>Math.random()-0.5); }
+function uniqueList(arr){ const seen=new Set(); const out=[]; arr.forEach(n=>{ const k=norm(n); if(!seen.has(k)){ seen.add(k); out.push(n);} }); return out; }
+function removeEvery(arr, name){ const key=norm(name); for(let i=arr.length-1;i>=0;i--){ if(norm(arr[i])===key){ arr.splice(i,1); } } }
+function diffAlive(alive, dead){ const deadSet=new Set(dead.map(norm)); return uniqueList(alive.filter(n=>!deadSet.has(norm(n)))); }
+
+/* ====== Track helpers ====== */
+const TR = {
+  cell(s){
+    const map = {WIN:'win', WINI:'wini', HIGH:'high', IN:'in', OUT:'out', STAY:'stay', SAFE:'safe', LOW:'low',  DUEL:'duel', ELIM:'elim', PURG:'purg', QUIT:'quit', DISQ:'disq', EVAC:'evac', DEAD:'dead', CHAMP:'champ', RUN:'run'};
+    const txt = (s==='DEAD') ? '\u00A0' : (s==='WINI' ? 'WIN' : (s==='CHAMP'?'Winner':(s==='RUN'?'Runner Up':s)));
+    return {cls: map[s]||'safe', txt};
+  },
+  dead(){ return TR.cell('DEAD'); }
+};
+
+
+// --- Fase 2: salvamento de distribución si el usuario no pulsó "Confirmar distribución" ---
+function ensureDistribution2(){
+  try{
+    if (distribution2 && Object.keys(distribution2).length===2) return true;
+    const board = document.getElementById("stage-redis2");
+    if(!board) return false;
+    const rows = Array.from(board.querySelectorAll(".team-row"));
+    if(rows.length<2) return false;
+    const out = {};
+    rows.forEach(r=>{
+      const team = r.querySelector(".team-title")?.textContent?.trim();
+      const vals = Array.from(r.querySelectorAll("select")).map(s=>s.value).filter(Boolean);
+      if(team && vals.length===7) out[team]=vals;
+    });
+    if(Object.keys(out).length===2){
+      window.distribution2 = out;
+      if(!window.advancingTeams || window.advancingTeams.length!==2){
+        window.advancingTeams = Object.keys(out);
+      }
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+/* ====== Estado ====== */
+let step=1, episode=1;
+let selected18 = [];
+let selectedTeams = [];
+let comebackMode = "";
+let distribution3 = {}; // 3 teams
+let distribution2 = {}; // 2 teams
+let advancingTeams = [];
+let activePlayers = []; // vivos
+let immunes = [];
+let nominees = [];
+let duelRanking = [];
+let eliminated = [];  // orden de eliminación
+let trackData = [];    // {name, cells:[], final?}
+let challengeLockedEp = 0;
+let resultsLockedEp = 0;
+let predefinedComebackWinners = null;
+let comebackApplied = false;
+
+/* Final (18) en dos partes */
+let finalState = { stage:0, finalists:[], eliminated:[], winner:null, runner:null };
+
+let talentShowUsed = false;
+let eventCount_BayronAndro = 0;
+let eventCount_FelixDani = 0;
+let eventCount_DiosDani = 0;
+let eventCount_DiosIsabel = 0;
+let eventCount_AlexandroIsabel = 0;
+let eventCount_CoronelDaelly = 0;
+let eventCount_EduardKimCamila = 0;
+let eventCount_AndromedaPeggy = 0;
+let eventCount_AlexandroCatalina = 0;
+let eventCount_GregLucasMendez = 0;
+let eventCount_IñaellaRoseDuaLingo = 0;
+
+// ====== Llaves (solo Fase 3) ======
+let vestsCurrentPhaseId = 0;
+let keysGamePlayed = false;
+let keysCorrect = [];
+let keysChoices = {}; // { nombre: "Dorada" | "Negra" | ... }
+let keysSaved = [];   // ganan por llave
+
+const KEY_COLORS = ["Dorada","Negra","Blanca","Rosada","Verde","Azul"];
+
+// ——— Lock de nominados en Fase 3 ———
+let keysNomineesLocked = false;
+
+function setPhase3LockState(){
+  const isP3 = (vestsCurrentPhaseId === 3);
+  // Se bloquea si ya hay 4 nominados o si ya se jugó Llaves
+  keysNomineesLocked = isP3 && (nominees.length === 4 || keysGamePlayed === true);
+
+  // Deshabilitar Random Chalecos cuando esté bloqueado
+  const rand = document.getElementById("randomVests");
+  if (rand) rand.disabled = keysNomineesLocked;
+}
+
+// Crea (si no existe) el botón de Llaves y ajusta estados de botones
+function ensureKeysButton(){
+  const bar = document.querySelector("#stage-4 .control-bar");
+  if(!bar) return;
+  let btn = document.getElementById("playKeys");
+  if(!btn){
+    btn = document.createElement("button");
+    btn.id = "playKeys";
+    btn.className = "btn";
+    btn.textContent = "Realizar Juego de Llaves";
+    // Inserta antes del Confirmar
+    const confirm = document.getElementById("confirmVests");
+    bar.insertBefore(btn, confirm || null);
+    btn.addEventListener("click", runKeysGame);
+  }
+  btn.style.display = (vestsCurrentPhaseId === 3) ? "inline-flex" : "none";
+  updateKeysButtons();
+}
+
+function updateKeysButtons(){
+  const confirm = document.getElementById("confirmVests");
+  const play = document.getElementById("playKeys");
+
+  if (vestsCurrentPhaseId === 3){
+    if (play) play.disabled = !(nominees.length === 4 && !keysGamePlayed);
+    // En fase 3, Confirmar solo se habilita después del juego de llaves
+    if (confirm) confirm.disabled = !(keysGamePlayed && nominees.length > 0);
+  } else {
+    // Fases normales (lógica original)
+    const ok = (vestsMode === "save1") ? !!savedPick : (nominees.length === requiredVestsCount);
+    if (confirm) confirm.disabled = !ok;
+    if (play) play.style.display = "none";
+  }
+}
+
+// Modal bonito y auto-contenido para mostrar el juego de llaves
+function showKeysModal(preNominees){
+  const overlay = document.createElement("div");
+  overlay.id = "keysModal";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;";
+  const panel = document.createElement("div");
+  panel.style.cssText = "background:#0f172a;color:#fff;max-width:780px;width:92%;border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.4);";
+  overlay.appendChild(panel);
+
+  const h = document.createElement("h3"); h.className="note"; h.textContent="Elección de Llaves"; panel.appendChild(h);
+  const d = document.createElement("div"); d.className="help";
+  d.textContent = "Cada uno de los nominados tiene la oportunidad de elegir una de las 6 llaves en frente suyo. Si alguna de esas llaves abre el cofre de Salvación, esa persona se salvará de ir al duelo de eliminación.";
+  panel.appendChild(d);
+
+  // Elección por persona
+  const block1 = document.createElement("div"); block1.className="ev-row";
+  block1.appendChild(document.createTextNode("Elecciones:"));
+  panel.appendChild(block1);
+
+  preNominees.forEach(n=>{
+    const row = document.createElement("div"); row.className="ev-row";
+    row.appendChild(chip(n, `${n} — Eligió la Llave ${keysChoices[n]}`));
+    panel.appendChild(row);
+  });
+
+  // Resultados
+  const h2 = document.createElement("h4"); h2.className="note"; h2.textContent="Resultados del Juego de Llaves"; panel.appendChild(h2);
+
+  preNominees.forEach(n=>{
+    const ok = keysCorrect.includes(keysChoices[n]);
+    const msg = ok
+      ? `${n} — Eligió una llave correcta y NO irá al Duelo de Eliminación.`
+      : `${n} — Eligió una llave incorrecta y no abrió el Cofre de Salvación.`;
+    const row = document.createElement("div"); row.className="ev-row";
+    const el = chip(n, msg);
+    if (ok) el.classList.add("safe"); else el.classList.add("lose");
+    row.appendChild(el); panel.appendChild(row);
+  });
+
+  const final = document.createElement("div"); final.className="help";
+  final.textContent = `Llaves correctas: ${keysCorrect.join(" • ")}`;
+  panel.appendChild(final);
+
+  const bar = document.createElement("div"); bar.className="control-bar";
+  const close = document.createElement("button"); close.className="btn primary"; close.textContent="Continuar";
+  close.onclick = ()=> document.body.removeChild(overlay);
+  bar.appendChild(close); panel.appendChild(bar);
+
+  document.body.appendChild(overlay);
+}
+
+// Ejecuta el juego: elige 2 llaves correctas y asigna una elección a cada nominado
+function runKeysGame(){
+  if (vestsCurrentPhaseId !== 3) return;
+  if (nominees.length !== 4){ toast("Debes tener exactamente 4 nominados para jugar."); return; }
+
+  keysWinners = shuffle(KEY_COLORS.slice()).slice(0, 2);
+
+  const availKeys = shuffle(KEY_COLORS.slice()).slice(0, 4);
+
+  const preNominees = nominees.slice();
+  const choices = {};
+  availKeys.forEach((color, i) => { choices[preNominees[i]] = color; });
+
+  keysChoices = choices;
+  const saved = preNominees.filter(n => keysWinners.includes(keysChoices[n]));
+  keysWinners = keysWinners.slice(); // normalize
+
+  nominees = nominees.filter(n => !saved.includes(n));
+
+  keysGamePlayed = true;
+  if (typeof setPhase3LockState === "function") setPhase3LockState();
+  renderKeysBox(preNominees.map(n => ({ name:n, color:keysChoices[n] })));
+  applyVestsUI?.();
+  updateKeysButtons();
+  renderNominees();
+}
+
+
+/* ====== Navegación ====== */
+const stepName = $("#stepName");
+const nextBtn = $("#nextBtn");
+const homeBtn = $("#homeBtn");
+if (homeBtn) {
+  homeBtn.addEventListener("click", () => {
+    location.href = "https://thexpedition.github.io/The-Xpedition-Official/"; 
+  });
+}
+function go(n){
+  [1,2,3,4,5,6].forEach(id=>$("#stage-"+id)?.classList.remove("active"));
+  $("#stage-purge")?.classList.remove("active");
+  $("#stage-redis2")?.classList.remove("active");
+  $("#stage-"+n)?.classList.add("active");
+  if(n==="purge"){ $("#stage-purge")?.classList.add("active"); }
+  step=n;
+  const labels={
+    1:"Paso 1 · Elige el elenco (20), equipos y comeback",
+    2:"Paso 2 · Distribuye a los 18 participantes en 3 equipos",
+    3:"Reto",
+    4:"Asignación de chalecos",
+    5:"Duelo de Eliminación",
+    6:`Track Record — Episodio ${episode}`,
+    "redis2":"Redistribución de Equipos","purge":"La Purga"
+  };
+  stepName.textContent = labels[n]||"";
+  nextBtn.disabled = true;
+  if(n===5){ renderNominees(); const dr = $("#duelResults"); if(dr){ dr.classList.add("hide"); $("#duelRanking").innerHTML=""; } }
+  if(n===6){ buildTRTable(); }
+const vbtn = document.getElementById("viewAwards");
+  if (vbtn) vbtn.style.display = (finalState && finalState.winner) ? "inline-flex" : "none";
+}
+
+// ===== Premios de la Temporada =====
+function isCatalina(name){
+  const x = __gNorm(name);
+  return x === 'catalina' || x.startsWith('catalina ') || x.includes(' catalina ');
+}
+
+function playedThisSeason(name){
+  return trackData.some(r => __gNorm(r.name) === __gNorm(name));
+}
+
+// Ranking completo de la temporada (peor→mejor), usando tu orden de 'eliminated' + final
+function computeSeasonRanking(){
+  const base = (Array.isArray(eliminated) ? eliminated.slice() : []);
+  if (finalState && finalState.runner) base.push(finalState.runner);
+  if (finalState && finalState.winner) base.push(finalState.winner);
+  // base ahora va de peor a mejor. Top6 = últimos 6
+  return base;
+}
+
+// Elige uno al azar del Top6 (mejores)
+function pickBestParticipantFromTop6(){
+  const rk = computeSeasonRanking();
+  if (!rk.length) return pick(selected18); // fallback
+  const top6 = rk.slice(-6);
+  return pick(top6);
+}
+
+function buildAwards(){
+  const cast = (trackData||[]).map(r=>r.name);
+  const rk = computeSeasonRanking();
+
+  // 1) Mejor Participante (al azar entre Top6)
+  const bestParticipant = pickBestParticipantFromTop6();
+
+  // 2) Poop of the Year (Eris Midnight si jugó, si no al azar)
+  const poopFixed = playedThisSeason("Eris Midnight") ? "Eris Midnight" : pick(cast);
+
+  // 3) Villano/a de la Temporada (al azar; título por género)
+  const vill = pick(cast);
+  const villSuffix = genderSuffix(vill); // "A" o "O"
+  const villTitle = `Villan${villSuffix} de la Temporada`;
+
+  // 4) Fan Favorite (al azar)
+  const fan = pick(cast);
+
+  // 5) Congeniality (al azar)
+  const congenial = pick(cast);
+
+  // 6) Mejor Pareja (dos distintos)
+  let p1 = pick(cast);
+  let p2 = pick(cast);
+  let guard = 0;
+  while (__gNorm(p2) === __gNorm(p1) && guard++ < 10){
+    p2 = pick(cast);
+  }
+
+  return [
+    { key:"best",   title:"Mejor Participante", winner:[bestParticipant], emoji:"🏆" },
+    { key:"villain",title:villTitle,           winner:[vill],            emoji:"🏆" },
+    { key:"fan",    title:"Fan Favorite",      winner:[fan],             emoji:"🏆" },
+    { key:"couple", title:"Mejor Pareja",      winner:[p1, p2],          emoji:"🏆" },
+    { key:"congen", title:"Congeniality",      winner:[congenial],       emoji:"🏆" },
+    { key:"poop",   title:"Poop Of The Year",  winner:[poopFixed],       emoji:"💩" }
+  ];
+}
+
+function showAwardsModal(){
+  const data = buildAwards();
+
+  // overlay
+  const ov = document.createElement("div");
+  ov.id = "awardsOverlay";
+
+  // panel
+  const panel = document.createElement("div");
+  panel.id = "awardsPanel";
+
+  const h = document.createElement("h3");
+  h.textContent = "AWARDS — Temporada";
+  panel.appendChild(h);
+
+  // grid 3x2
+  const grid = document.createElement("div");
+  grid.className = "awards-grid";
+
+  data.forEach(item=>{
+    const card = document.createElement("div");
+    card.className = "award-card";
+
+    const badge = document.createElement("div");
+    badge.className = "award-emoji";
+    badge.textContent = item.emoji;
+    card.appendChild(badge);
+
+    const title = document.createElement("div");
+    title.className = "award-title";
+    title.textContent = item.title;
+    card.appendChild(title);
+
+    // Avatares (1 o 2)
+    const wrap = document.createElement("div");
+    wrap.className = "award-avatars";
+    item.winner.forEach(n=>{
+      wrap.appendChild(chip(n, n));
+    });
+    card.appendChild(wrap);
+
+    grid.appendChild(card);
+  });
+
+  panel.appendChild(grid);
+
+  const bar = document.createElement("div");
+  bar.className = "control-bar";
+
+  const close = document.createElement("button");
+  close.className = "btn";
+  close.textContent = "Cerrar";
+  close.onclick = ()=> document.body.removeChild(ov);
+
+  const save = document.createElement("button");
+  save.className = "btn primary";
+  save.textContent = "Guardar como imagen";
+  save.onclick = ()=> {
+    // Si quieres, aquí luego integramos html2canvas; por ahora cerramos.
+    toast("No hay presupuesto para hacer eso 😄");
+  };
+
+  bar.appendChild(close); bar.appendChild(save);
+  panel.appendChild(bar);
+
+  ov.appendChild(panel);
+  document.body.appendChild(ov);
+}
+
+// Click del botón
+document.getElementById("viewAwards")?.addEventListener("click", ()=>{
+  if (!(finalState && finalState.winner)){
+    toast("Los premios se muestran al finalizar la temporada.");
+    return;
+  }
+  showAwardsModal();
+});
+
+
+/* ====== Paso 1: Cast + equipos ====== */
+const castGrid=$("#castGrid");
+function buildCastGrid(){
+  castGrid.innerHTML="";
+  for(let i=0;i<20;i++){
+    const slot = document.createElement("div"); slot.className="slot"; slot.dataset.index=i;
+    const icon = document.createElement("div"); icon.className="icon";
+    const img = document.createElement("img"); icon.appendChild(img); icon.appendChild(makeInitials("?"));
+    const name = document.createElement("div"); name.className="name"; name.textContent="Elegir participante";
+    const sel = document.createElement("select");
+    sel.innerHTML = `<option value="">— Ninguno —</option>` + ALL_PARTICIPANTS.map(n=>`<option>${n}</option>`).join("");
+    sel.addEventListener("change", ()=>{
+  const v=sel.value;
+
+      name.textContent = v || "Elegir participante";
+      const pic = icon.querySelector("img");
+      if(v){ loadImg(pic, imgFor(v), v); } else { const newImg=document.createElement("img"); pic.replaceWith(newImg); icon.querySelector(".placeholder")?.remove(); icon.appendChild(makeInitials("?")); }
+        updateCastState();
+  enforceUniqueAcrossSelects('#castGrid');
+});
+    slot.appendChild(icon); slot.appendChild(name); slot.appendChild(sel);
+    castGrid.appendChild(slot);
+  }
+}
+buildCastGrid(); enforceUniqueAcrossSelects('#castGrid');
+
+function fillTeamsSelects(){
+  const ids=['team1','team2','team3'];
+  const opts = `<option value="">— Selecciona equipo —</option>` + TEAMS.map(t=>`<option>${t}</option>`).join("");
+  ids.forEach(id=>{ const s=document.getElementById(id); s.innerHTML=opts; });
+}
+fillTeamsSelects();
+['team1','team2','team3'].forEach(id=>{ const s=document.getElementById(id); s.addEventListener('change',()=>{ const vals=['team1','team2','team3'].map(i=>document.getElementById(i).value); ['team1','team2','team3'].forEach(j=>{ const sj=document.getElementById(j); Array.from(sj.options).forEach(o=>{ if(!o.value){o.disabled=false;return;} if(sj.value===o.value){o.disabled=false;} else {o.disabled = vals.includes(o.value);} }); }); }); });
+
+function getStep1State(){
+  const castVals = $$("#castGrid select").map(s=>s.value).filter(Boolean);
+  const castOK   = castVals.length===20 && new Set(castVals).size=== 20;
+  const tVals    = ['team1','team2','team3'].map(id=>document.getElementById(id).value).filter(Boolean);
+  const teamsOK  = tVals.length===3 && new Set(tVals).size===3;
+  const comeback = document.getElementById('comeback').value || "";
+  return { castVals:[...new Set(castVals)], tVals, comeback, ok:castOK&&teamsOK&&!!comeback };
+}
+function updateCastState(){
+  const vals = $$("#castGrid select").map(s=>s.value).filter(Boolean);
+  $("#castCountHelp").textContent = `${new Set(vals).size}/20 seleccionados`;
+  nextBtn.disabled = !getStep1State().ok;
+}
+
+document.addEventListener('change', (e)=>{
+  if(e.target.closest('#castGrid') || ['team1','team2','team3','comeback'].includes(e.target.id)){
+    updateCastState();
+  }
+});
+
+$("#randomCast").addEventListener("click", ()=>{
+  const picks = shuffle(ALL_PARTICIPANTS.filter(n=>n!=="Bonju")).slice(0,20);
+  $$("#castGrid select").forEach((s,i)=>{ s.value=picks[i]||""; s.dispatchEvent(new Event('change')); }); enforceUniqueAcrossSelects('#castGrid');
+});
+$("#randomTeams").addEventListener("click", ()=>{
+  const picks = shuffle(TEAMS).slice(0,3);
+  ['team1','team2','team3'].forEach((id,i)=>{ const s=document.getElementById(id); s.value=picks[i]; s.dispatchEvent(new Event('change')); });
+  updateCastState();
+});
+
+nextBtn.addEventListener("click", ()=>{
+  if(step===1){
+    const {castVals,tVals,comeback,ok} = getStep1State();
+    if(!ok){ toast("Completa: 20 únicos + 3 equipos distintos + formato."); return; }
+    window.cast20 = castVals.slice();
+    selectedTeams = tVals;
+    comebackMode = comeback;
+    if (!Array.isArray(trackData)) trackData = [];
+    const have = new Set(trackData.map(r=>norm(r.name)));
+    window.cast20.forEach(n=>{
+      if (!have.has(norm(n))) trackData.push({ name:n, cells:[] });
+    });
+    buildPurgeCastGrid(window.cast20);
+    resetPurgeFlow();
+    go("purge");
+  } else if(step===2){ go(3); updateChallengeAvailability(); updateChallengeAvailability(); }
+  else if(step===3){ go(4); }
+  else if(step===4){ go(5); }
+  else if(step===5){ go(6); }
+});
+
+/* ====== Paso 2: Board 3 equipos ====== */
+const teamBoard3 = $("#teamBoard3");
+function makeTeamRow(label, count){
+  const wrap=document.createElement("div"); wrap.className="team-row";
+  const h=document.createElement("div"); h.className="team-title"; h.textContent=label; wrap.appendChild(h);
+  const grid=document.createElement("div"); grid.className="grid"; grid.style.gridTemplateColumns="repeat(6,1fr)";
+  for(let i=0;i<count;i++){
+    const slot=document.createElement("div"); slot.className="slot"; slot.dataset.team=label;
+    const icon=document.createElement("div"); icon.className="icon";
+    const img=document.createElement("img"); icon.appendChild(img); icon.appendChild(makeInitials("?"));
+    const name=document.createElement("div"); name.className="name"; name.textContent="Vacío";
+    const s=document.createElement("select");
+    s.innerHTML=`<option value="">— Ninguno —</option>` + activePlayers.map(n=>`<option>${n}</option>`).join("");
+    s.addEventListener("change", ()=>{
+  const v=s.value;
+ name.textContent=v||"Vacío";
+      const pic=icon.querySelector("img");
+      if(v){ loadImg(pic, imgFor(v), v); } else { const newImg=document.createElement("img"); pic.replaceWith(newImg); icon.querySelector(".placeholder")?.remove(); icon.appendChild(makeInitials("?")); }
+        validateTeamFill3(); enforceUniqueAcrossSelects('#stage-2');
+  enforceUniqueAcrossSelects('#stage-2');
+});
+    slot.appendChild(icon); slot.appendChild(name); slot.appendChild(s);
+    grid.appendChild(slot);
+  }
+  wrap.appendChild(grid);
+  return wrap;
+}
+function build3TeamsBoard(){
+  teamBoard3.innerHTML="";
+  $("#teamsTitle").textContent = `Distribuye a tus 18 participantes en: ${selectedTeams.join(" • ")}`;
+  selectedTeams.forEach(t=> teamBoard3.appendChild(makeTeamRow(t,6)));
+  validateTeamFill3(); enforceUniqueAcrossSelects('#stage-2');
+}
+function validateTeamFill3(){
+  const selects = $$("#stage-2 .slot select");
+  const vals = selects.map(s=>s.value).filter(Boolean);
+  const filledAll = vals.length===18 && new Set(vals).size===18;
+  $("#confirmTeams3").disabled = !filledAll;
+}
+$("#fillRandom3").addEventListener("click", ()=>{
+  const picks = shuffle(activePlayers);
+  let idx=0;
+  $$("#stage-2 .slot select").forEach((s)=>{ s.value=picks[idx++]; s.dispatchEvent(new Event('change')); }); enforceUniqueAcrossSelects('#stage-2');
+});
+$("#clearTeams").addEventListener("click", ()=>{
+  $$("#stage-2 .slot select").forEach(s=>{ s.value=""; s.dispatchEvent(new Event('change')); }); enforceUniqueAcrossSelects('#stage-2');
+});
+$("#confirmTeams3").addEventListener("click", ()=>{
+  distribution3={};
+  $$(".team-row").forEach(r=>{
+    const team=r.querySelector(".team-title").textContent;
+    const vals=$$("select",r).map(s=>s.value).filter(Boolean);
+    distribution3[team]=vals;
+  });
+  toast("Distribución guardada");
+  go(3); updateChallengeAvailability(); // auto avanzar
+  updateChallengeAvailability();
+  resetEpisodeUI();
+});
+
+/* ====== Paso 3: Reto + narrativa ====== */
+const bonjuImg=$("#bonjuImg"); if(bonjuImg) loadImg(bonjuImg, BONJU_IMG, "B");
+const challengeSelect=$("#challengeSelect");
+const runChallenge=$("#runChallenge");
+challengeSelect.addEventListener("change", ()=> { 
+  updateChallengeAvailability(); 
+  runChallenge.disabled = !challengeSelect.value; 
+});
+
+// === Botón "Random reto" ===
+const randomChallengeBtn = $("#randomChallenge");
+if (randomChallengeBtn){
+  randomChallengeBtn.addEventListener("click", ()=>{
+    // Respeta los límites por episodio y los deshabilitados
+    updateChallengeAvailability();
+
+    // Opciones habilitadas (sin el placeholder)
+    const enabled = Array.from(challengeSelect.options)
+      .filter(o => o.value && !o.disabled);
+
+    if (!enabled.length){
+      toast("No hay retos disponibles ahora.");
+      return;
+    }
+
+    // Elegir uno al azar
+    const pick = enabled[Math.floor(Math.random()*enabled.length)];
+    challengeSelect.value = pick.value || pick.textContent.trim();
+    challengeSelect.dispatchEvent(new Event("change")); // habilita "Generar reto"
+
+  });
+}
+
+function currentPhase(ep){
+  if(ep<=4) return {id:1};
+  if(ep<=8) return {id:2};
+  if(ep<=13) return {id:3};
+  if(ep===14) return {id:4, sub:'A'};
+  if(ep>=15 && ep<=17) return {id:4, sub:'B'};
+  return {id:4, sub:'Final'};
+}
+
+function buildNarration(type, context = {}){
+  const ep = episode;
+  const phase = currentPhase(ep);
+
+  const BASE = {
+"Rápidez": "Participantes, hoy enfrentan un desafío contrarreloj. No se trata solo de ser el más veloz, sino del equilibrio entre velocidad, técnica y precisión. Cada segundo cuenta, pero los errores cuestan. Ser constante y mantener la concentración marcará la diferencia.",
+"Estrategia": "Hoy pondremos a prueba su capacidad de pensar a futuro. El reto se basa en la gestión de recursos, toma de decisiones y adaptación ante lo inesperado. No siempre gana el más rápido, sino quien planifica con inteligencia, riesgo controlado y coherencia en sus movimientos.",
+"Creatividad": "El desafío de hoy evaluará su imaginación y capacidad conceptual. Deberán transformar una idea en una propuesta visual coherente. Se calificará originalidad, claridad del mensaje, técnica aplicada y el impacto estético de la presentación final.",
+"Inteligencia": "En este reto, la lógica será su mejor aliada. Resolverán acertijos, patrones y deducciones bajo presión. La precisión del razonamiento, la claridad del pensamiento y la forma en que lleguen a la respuesta serán factores clave en la evaluación.",
+"Agilidad": "Hoy el cuerpo será su herramienta principal. Enfrentarán un circuito técnico donde la coordinación, los reflejos y la consistencia definen el éxito. No se trata solo de velocidad, sino de control: cada error o caída restará puntos.",
+"Búsqueda": "El reto de hoy los llevará a una misión de observación, intuición y enfoque. Deberán interpretar pistas, seguir rastros y administrar su tiempo con sabiduría. Solo quienes logren unir las piezas correctamente alcanzarán la meta.",
+"Duelos": "Enfrentamientos directos, sin margen de error. Cada duelo mide precisión, ejecución y temple bajo presión. Se premiará el control y la estrategia en cada movimiento. En caso de empate, decidirá la menor penalización o el mejor tiempo.",
+"Moda": "Hoy será un desfile de talento. Deberán presentar un diseño que refleje identidad, técnica y elegancia. Se juzgarán silueta, confección, ajuste, estilismo y presencia escénica. Cada detalle cuenta: un acabado deficiente o incoherente puede costar caro.",
+"Música": "En este reto, la voz, el ritmo y la interpretación serán su carta de presentación. Se evaluará afinación, tempo, manejo escénico y conexión con la pieza. No basta con cantar: deben transmitir emoción, fuerza y autenticidad.",
+"Cultura & Conocimiento": "Hoy medirán su mente. En una competencia de trivia, los aciertos suman, la rapidez otorga ventaja y los errores reiterados penalizan. Ganará quien demuestre dominio, precisión y serenidad intelectual bajo presión.",
+"Show de Talentos": "Esta es su oportunidad de brillar. Cada participante presentará un talento propio frente al jurado. Se valorarán técnica, creatividad, narrativa del número, nivel de riesgo y conexión emocional con el público. La autenticidad será clave.",
+"Rap": "Hoy subirán al escenario para una batalla de ingenio. Se evaluarán métrica, flow, contenido, improvisación, coherencia y respiración. Las respuestas deben ser certeras y creativas. No se trata solo de rimar, sino de impactar.",
+"Town of Salem": "Hoy ingresarán a un juego de roles ocultos donde la estrategia social será su mayor arma. Pueblo, mafia o neutrales: cada facción tiene su objetivo. Se calificará la lectura social, la coherencia en discursos, la defensa lógica y la capacidad para sobrevivir sin revelar su identidad.",
+"Noticiero": "El reto de hoy los llevará a convertirse en presentadores. Deberán realizar un noticiero en vivo informando los eventos recientes de The Xpedition. Se evaluará dicción, ritmo, presencia, trabajo en equipo y la capacidad para mantener la atención del público.",
+"Suerte": "Hoy enfrentarán al azar. Este reto pondrá a prueba su temple y capacidad para decidir bajo incertidumbre. No todo depende de la suerte: se valorará el cálculo, la intuición y la forma en que afrontan cada riesgo.",
+"Bonju Chef": "Bienvenidos a la cocina de alta presión. Deberán preparar un plato en tiempo limitado, demostrando técnica, sabor, presentación y limpieza. Se evaluará la organización, el punto de cocción y el trabajo en equipo. Solo el más completo brillará en el paladar del jurado.",
+"¿Quién mató a Bonju?": "Hoy resolverán un misterio. Entre pistas, declaraciones y sospechas deberán deducir quién es el responsable. Se calificará la capacidad de conectar evidencias, elaborar hipótesis coherentes y argumentar con lógica frente al jurado.",
+"Bonju Drag Race": "El escenario es suyo. En este formato de performance y pasarela, deberán demostrar presencia escénica, ejecución impecable y dominio del personaje. Se premiará originalidad, carisma y resolución bajo presión.",
+"Top Model": "Hoy encarnarán la elegancia. En una competencia de modelaje profesional, se juzgará la pose, expresión, control corporal y versatilidad frente a cámara. La constancia y la actitud definirán quién realmente domina la pasarela."
+};
+
+  let marco = "";
+  if (ep === 18) {
+    marco = "En este episodio, la exigencia está al límite, los peores quedarán automaticamente ELIMINADOS de la competencia y sin poder avanzar a la final.";
+  } else if (ep === 9) {
+    marco = "En esté episodio especial, competirán solo eliminados y dos de los eliminados durante la primera mitad de la competencia recibirán una segunda oportunidad en The Xpedition.";
+  } else if (phase.id === 1) {
+    marco = "En esta Fase del juego, solo un equipo ganará la inmunidad y el poder de decidir los nominados, los otros dos tendrán a sus miembros de equipo en peligro y con probabilidades de ser eliminados.";
+  } else if (phase.id === 2) {
+    marco = "En está segunda Fase del juego es todo o nada, el equipo ganador recibe inmunidad y todos los beneficios, los miembros del equipo perdedor estarán en riesgo de ser nominados.";
+  } else if (phase.id === 3) {
+    marco = "En está tercera fase cada participante compite por su cuenta. Habrá dos inmunidades en juego, los ganadores decidirán los primeros nominados al duelo de eliminación.";
+  } else if (phase.id === 4 && phase.sub === 'A') {
+    marco = "En está última instancia del juego, ganar es lo primordial.";
+  } else if (phase.id === 4 && phase.sub === 'B') {
+    marco = "En está última instancia del juego, ganar es lo primordial.";
+  }
+
+  const intro = BASE[type] || "Desafío con criterios de evaluación claros y medibles.";
+  return `${intro} ${marco}`.trim();
+}
+
+
+/* ====== Eventos / Fórmulas (episodio) ====== */
+function evClear(){
+  const box = $("#episodeEvents");
+  $("#eventsList").innerHTML = "";
+  box.classList.add("hide");
+}
+function evShow(){ $("#episodeEvents").classList.remove("hide"); }
+function evRowSingle(name, text){
+  const row = document.createElement("div"); row.className = "ev-row";
+  row.appendChild(chip(name, name));
+  const t = document.createElement("span"); t.className="txt"; t.textContent = " " + text;
+  row.appendChild(t);
+  return row;
+}
+function evRowPair(a,b,text){
+  const row = document.createElement("div"); row.className = "ev-row";
+  row.appendChild(chip(a, a));
+  row.appendChild(chip(b, b));
+  const t = document.createElement("span"); t.className="txt"; t.textContent = " " + text;
+  row.appendChild(t);
+  return row;
+}
+function evNote(text){
+  const row = document.createElement("div"); row.className = "ev-row";
+  const t = document.createElement("span"); t.className="muted"; t.textContent = text;
+  row.appendChild(t);
+  return row;
+}
+function sample(arr, k){
+  const pool = arr.slice();
+  const out=[];
+  for(let i=0;i<k && pool.length>0;i++){
+    const idx = Math.floor(Math.random()*pool.length);
+    out.push(pool.splice(idx,1)[0]);
+  }
+  return out;
+}
+
+function resetEpisodeUI(){
+  updateChallengeAvailability();
+  $("#challengeSummary").innerHTML="";
+  $("#immuneTeamChip").innerHTML="";
+  $("#immuneList").innerHTML="";
+  $("#bonjuTxt").textContent="";
+  evClear();
+  $("#bonjuBox").style.display="none";
+  $("#winnersTitle").textContent="Inmunes";
+  $("#winnersBox").classList.add("hide");
+  $("#cbTopElims")?.classList.add("hide");
+  $("#finalTop4")?.classList.add("hide");
+  $("#goVests").textContent="Asignar chalecos →";
+  challengeSelect.selectedIndex=0;
+  runChallenge.disabled=true;
+}
+
+let vestsMode = "nominate"; // 'nominate' | 'save1'
+let savedPick = null;
+
+
+
+function renderSpecials(listEl, type, aliveList, ep){
+  const A = Array.isArray(aliveList) ? aliveList.slice()
+    : (typeof getAlive === "function" ? getAlive().slice()
+    : (Array.isArray(window.alive) ? window.alive.slice() : []));
+  if (!A.length) return;
+
+  // contadores seguros (persisten en window)
+  window.eventCount_BayronAndro     ??= 0;
+  window.eventCount_FelixDani       ??= 0;
+  window.eventCount_DiosDani        ??= 0;
+  window.eventCount_DiosIsabel      ??= 0;
+  window.eventCount_AlexandroIsabel ??= 0;
+  window.eventCount_CoronelDaelly   ??= 0;
+  window.eventCount_EduardKimCamila   ??= 0;
+  window.eventCount_AndromedaPeggy   ??= 0;
+  window.eventCount_AlexandroCatalina   ??= 0;
+  window.eventCount_GregLucasMendez   ??= 0;
+  window.eventCount_IñaellaRoseDuaLingo   ??= 0;
+
+  const add = (n)=> listEl.appendChild(n);
+
+  // —— Nuevos eventos duos pedidos ——
+  if (A.includes("Kim Camila") && A.includes("Lalamila") && A.includes("Pier")) {
+    const row = document.createElement("div"); row.className = "ev-row";
+    row.appendChild(chip("Kim Camila","Kim Camila"));
+    row.appendChild(chip("Lalamila","Lalamila"));
+    row.appendChild(chip("Pier","Pier"));
+    const t = document.createElement("span"); t.className="txt"; t.textContent = " Kim Camila y Lalamila agarraron a golpes a Pier";
+    row.appendChild(t);
+    add(row);
+  }
+
+  
+  // —— Nuevos eventos pedidos ——
+  
+  
+if (A.includes("Catalina")) add(evRowSingle("Catalina","se enojó en el reto y amenazó a Bonju con renunciar."));
+  if (A.includes("Dios")) add(evRowSingle("Dios","Fue superior por mucho al resto del cast"));
+  if (type === "Rap" && A.includes("Alexandro")) add(evRowSingle("Alexandro","rapeó en Guaraní y no se le entendió una Óscar."));
+  if (type === "Música" && A.includes("Greg")) add(evRowSingle("Greg","hizo una reseña que a nadie le importó."));
+  if (type === "Cultura & Conocimiento" && A.includes("Luciano")) add(evRowSingle("Luciano","hizo 0 puntos."));
+  if (type === "Moda" && A.includes("Felix")) add(evRowSingle("Felix","le dañó los vestidos a los demás."));
+  if (type === "Moda" && A.includes("Dios")) add(evRowSingle("Dios","Bonju agradeció estar viva después de ver su Look"));
+  if (type === "Town of Salem" && A.includes("Isabel")) add(evRowSingle("Isabel","lloró de felicidad al saber de qué trataría el reto de hoy."));
+  if (type === "Estrategia" && A.includes("Dani")) add(evRowSingle("Dani","utilizó sus habilidades de engañar y mentir para obtener una ventaja considerable."));
+  if (type === "Noticiero" && A.includes("Daelly")) add(evRowSingle("Daelly","Daelly realizó Changamotonews pero terminó incendiando en llamas el escenario después de una pelea con producción."));
+  if (type === "Música" && A.includes("Coronel")) add(evRowSingle("Coronel","se quejó y dijo que pusieran música de hombres."));
+  if (type === "Búsqueda" && A.includes("Nidia Mirella")) add(evRowSingle("Nidia Mirella","demostró sus dotes como detective."));
+  if (ep >= 18 && A.includes("Luciano")) add(evRowSingle("Luciano","se puso a llorar porque jamás pensó que iba a llegar tan lejos."));
+
+  // parejas (máx 2 veces)
+  if (A.includes("Bayron") && A.includes("Andromeda") && window.eventCount_BayronAndro < 2){
+    add(evRowPair("Bayron","Andromeda","Bayron se hizo popó encima y a Andromeda le tocó cambiarle el pañal.")); window.eventCount_BayronAndro++;
+  }
+  if (A.includes("Felix") && A.includes("Dani") && window.eventCount_FelixDani < 2){
+    add(evRowPair("Felix","Dani","Felix amenazó a Dani con bloquearla 10 años si lo traicionaba.")); window.eventCount_FelixDani++;
+  }
+  if (A.includes("Dios") && A.includes("Dani") && window.eventCount_DiosDani < 2){
+    add(evRowPair("Dios","Dani","Dios le dijo a Trani que tenía cara de Escarabajo")); window.eventCount_DiosDani++;
+  }
+  if (A.includes("Dios") && A.includes("Isabel") && window.eventCount_DiosIsabel < 2){
+    add(evRowPair("Dios","Isabel","— Dios le dio de comer a la vagabunda de Hongobel")); window.eventCount_DiosIsabel++;
+  }
+  if (A.includes("Alexandro") && A.includes("Isabel") && window.eventCount_AlexandroIsabel < 2){
+    add(evRowPair("Alexandro","Isabel","— Isabel le pegó un puño a Alexandro con rencor")); window.eventCount_AlexandroIsabel++;
+  }
+  if (A.includes("Daelly") && A.includes("Coronel") && window.eventCount_CoronelDaelly < 2){
+    add(evRowPair("Coronel","Daelly","Coronel y Daelly se dieron un apasionado beso")); window.eventCount_CoronelDaelly++;
+ }
+  if (A.includes("Eduard") && A.includes("Kim Camila") && window.eventCount_EduardKimCamila < 2){
+    add(evRowPair("Eduard","Kim Camila","— Kim Camila hizo clases de Boxeo con Eduard y le enseñó a respetar")); window.eventCount_EduardKimCamila++;
+  }
+  if (A.includes("Andromeda") && A.includes("Peggy") && window.eventCount_AndromedaPeggy < 2){
+    add(evRowPair("Andromeda","Peggy","Andromeda traicionó a Peggy")); window.eventCount_AndromedaPeggy++;
+  }
+  if (A.includes("Alexandro") && A.includes("Catalina") && window.eventCount_AlexandroCatalina < 2){
+    add(evRowPair("Alexandro","Catalina","Catalina le dijo a Alexandro que es el peor amigo que ha tenido en su vida")); window.eventCount_AlexandroCatalina++;
+  }
+  if (A.includes("Greg") && A.includes("Lucas Mendez") && window.eventCount_GregLucasMendez < 2){
+    add(evRowPair("Greg","Lucas Mendez","Greg filtró conversaciones y se las envió a Lucas")); window.eventCount_GregLucasMendez++;
+  }
+  if (A.includes("Iñaella Rose") && A.includes("Dua Lingo") && window.eventCount_IñaellaRoseDuaLingo < 2){
+    add(evRowPair("Iñaella Rose","Dua Lingo","Iñaella peino y maquillo a Dua Lingo")); window.eventCount_IñaellaRoseDuaLingo++;
+  }
+
+}
+
+/* ===== Eventos del episodio (completo, con todos los tipos) ===== */
+function renderEpisodeEvents(type, peopleOverride = null){
+  const list = $("#eventsList");
+  list.innerHTML = "";
+
+  // vivos snapshot seguro
+  const alive = (peopleOverride && peopleOverride.length)
+    ? peopleOverride.slice()
+    : (typeof getAlive === 'function' ? getAlive().slice()
+       : (Array.isArray(window.alive) ? window.alive.slice() : []));
+
+  if (!alive || !alive.length){ evShow(); return; }
+
+  // util para subtítulos
+  function titleRow(txt){ const el=document.createElement('div'); el.className='ev-sub'; el.textContent=txt; return el; }
+
+  /* ---------- ESPECIALES por tipo ---------- */
+
+  if (type === "Batalla de Baile") {
+  const ph = (typeof currentPhase==="function") ? currentPhase(episode) : {id:3};
+  if (!(ph.id===1 || ph.id===2)){
+    toast("“Batalla de Baile” solo está disponible en Fase 1 y 2.");
+    evShow(); return;
+  }
+
+  const add = (el)=> list.appendChild(el);
+  const pool = alive.slice();
+  let songs = (window.SONGS||[]).slice(); shuffle(songs);
+  let round = 1;
+  let contenders = shuffle(pool.slice());
+
+  const rowVs = (names, info) => {
+    const row = document.createElement("div"); row.className="ev-row";
+    names.forEach(n => row.appendChild(chip(n, n)));
+    const t = document.createElement("span"); t.className="txt"; t.textContent = " — " + info;
+    row.appendChild(t);
+    return row;
+  };
+
+  while (contenders.length > 1){
+    add(titleRow(`Ronda ${round}`));
+    const next = [];
+    for (let i=0; i<contenders.length; ){
+      if (i+1 < contenders.length){ // 1vs1
+        const a = contenders[i], b = contenders[i+1]; i += 2;
+        const song = songs.length? songs.shift() : `Pista ${round}-${i}`;
+        add(rowVs([a,b], `Canción: ${song}`));
+        const win = [a,b].slice().sort((x,y)=>(perfScore(y,"dance")-perfScore(x,"dance")))[0];
+        add(evRowSingle(win, "Ganó su duelo y avanza."));
+        next.push(win);
+      } else {
+        // trío si quedó impar
+        const trio = [contenders[i-2], contenders[i-1], contenders[i]].filter(Boolean);
+        const song = songs.length? songs.shift() : `Pista ${round}-final`;
+        add(rowVs(trio, `Canción: ${song}`));
+        const win = trio.slice().sort((x,y)=>(perfScore(y,"dance")-perfScore(x,"dance")))[0];
+        add(evRowSingle(win, "Ganó su duelo y avanza."));
+        next.push(win);
+        i++;
+      }
+    }
+    contenders = next;
+    round++;
+  }
+
+  const champion = contenders[0];
+  add(titleRow("Ganador/a de la Batalla de Baile"));
+  add(evRowSingle(champion, "Consiguió la victoria final."));
+
+  // Inmunidad de equipo (Fase 1/2)
+  const teamMap = (ph.id===1 ? (window.distribution3||{}) : (window.distribution2||{}));
+  let winTeam = Object.keys(teamMap).find(t => (teamMap[t]||[]).includes(champion)) || "";
+  window.immunes = (teamMap[winTeam]||[]).slice();
+
+
+  evShow(); return;
+}
+
+/* === RETO: ROBA UN BONJUROIT === */
+if (type === "Roba un Bonjuroit") {
+  return __renderRobaBonjuroit();
+} 
+(function(){
+  const $id = (s)=> document.getElementById(s);
+  const aliveNow = ()=> (typeof getAlive==="function" ? getAlive() : (window.activePlayers||[])).slice();
+
+  function chipOrBold(n){
+    if (typeof chip === "function") return chip(n, n);
+    const b = document.createElement("strong"); b.textContent = n; return b;
+  }
+  function add(el){ const list = $id("eventsList"); if(list) list.appendChild(el); }
+  function row(parts){
+    const r = document.createElement("div"); r.className="ev-row";
+    parts.forEach(p=>{
+      if (typeof p==="string"){ const s=document.createElement("span"); s.className="txt"; s.textContent=p; r.appendChild(s); }
+      else if (p && p.chip){ r.appendChild(chipOrBold(p.chip)); }
+    });
+    return r;
+  }
+  function title(t){ const d=document.createElement("div"); d.className="ev-title"; d.textContent=t; return d; }
+  function subtitle(t){ const d=document.createElement("div"); d.className="ev-sub"; d.textContent=t; return d; }
+  function showBox(){ $id("episodeEvents")?.classList.remove("hide"); }
+  function shuffle(a){ const x=a.slice(); for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+  const BONJUROITS = [
+    "Calocha Supreme","Glitchy Z","Tóxico Deluxe","Vibrato Zeta","Rayo Fiu-Fiu","Diamantina XR",
+    "Ice-Mind v3","Ópera 1920 Pro","Krill Core","Nieve Rosa+","Guepardo 5G","Mango Uwu",
+    "Sawpack 2.0","CardiMix","Turn It Up MAX","Foca Neon","Pingüi Byte","Bonjurrito X","Brain-K","Frostbite Mini"
+  ];
+
+  window.__renderRobaBonjuroit = function(){
+    const alive = aliveNow(); if(!alive.length) return;
+    showBox();
+    add(title("Roba un Bonjuroit"));
+    add(subtitle("Robos"));
+
+    const ladrones = shuffle(alive);
+    const victimas = shuffle(alive);
+    const maxPairs = Math.min(10, alive.length);
+    const usadosLadron = new Set();
+    let vi = 0;
+    for(let i=0; i<ladrones.length && usadosLadron.size<maxPairs; i++){
+      const thief = ladrones[i];
+      if (usadosLadron.has(thief)) continue;
+      let victim = victimas[vi++ % victimas.length];
+      if (victim === thief){
+        victim = victimas[vi++ % victimas.length];
+        if (victim === thief) continue;
+      }
+      usadosLadron.add(thief);
+      const item = BONJUROITS[usadosLadron.size % BONJUROITS.length];
+      add( row([{chip:thief}," le robó a ",{chip:victim},` el Bonjuroit «${item}».`] ));
+    }
+
+    // especial
+    const candidatosEspecial = alive.filter(n=> !usadosLadron.has(n));
+    const especial = candidatosEspecial.length ? pick(candidatosEspecial) : pick(alive);
+    add( row([{chip:especial},": ","Robó más cosas, pero Bonju le dijo que aquí solo gana el que ella quiera."]) );
+
+    if (typeof evShow==="function") return evShow();
+  };
+
+  // Opción en el <select> (sin tocar availability)
+  setTimeout(()=>{
+    const sel=$id("challengeSelect"); if(!sel) return;
+    const label="Roba un Bonjuroit";
+    if(!Array.from(sel.options).some(o=>(o.textContent||"").trim()===label)){
+      const opt=document.createElement("option"); opt.textContent=label; sel.appendChild(opt);
+    }
+  },0);
+})();
+
+/* === RETO: EXCLUIR  === */
+if (type === "Excluir") {
+  return __renderExcluir();
+} 
+(function(){
+  const $id = (s)=> document.getElementById(s);
+  const aliveNow = ()=> (typeof getAlive==="function" ? getAlive() : (window.activePlayers||[])).slice();
+
+  function chipOrBold(n){
+    if (typeof chip === "function") return chip(n, n);
+    const b = document.createElement("strong"); b.textContent = n; return b;
+  }
+  function add(el){ const list = $id("eventsList"); if(list) list.appendChild(el); }
+  function row(parts){
+    const r = document.createElement("div"); r.className="ev-row";
+    parts.forEach(p=>{
+      if (typeof p==="string"){ const s=document.createElement("span"); s.className="txt"; s.textContent=p; r.appendChild(s); }
+      else if (p && p.chip){ r.appendChild(chipOrBold(p.chip)); }
+    });
+    return r;
+  }
+  function title(t){ const d=document.createElement("div"); d.className="ev-title"; d.textContent=t; return d; }
+  function subtitle(t){ const d=document.createElement("div"); d.className="ev-sub"; d.textContent=t; return d; }
+  function showBox(){ $id("episodeEvents")?.classList.remove("hide"); }
+  function shuffle(a){ const x=a.slice(); for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+
+  window.__renderExcluir = function(){
+    let remaining = aliveNow(); if(!remaining.length) return;
+    showBox();
+    add(title("Excluir"));
+
+    for(let r=1; r<=5 && remaining.length>2; r++){
+      // Ronda: título y participantes actuales
+      add(subtitle(`Ronda ${r}: deben decidir a quién excluir`));
+      const lista = document.createElement("div"); lista.className="ev-row";
+      remaining.forEach(n => lista.appendChild(chipOrBold(n)));
+      add(lista);
+
+      // calcular cuántos excluir esta ronda (de forma segura)
+      let toRemove;
+      if (r < 5){
+        // repartir para llegar a 2 al final: remove al menos 1, y lo necesario
+        toRemove = Math.max(1, Math.ceil((remaining.length - 2) / (6 - r)));
+      } else {
+        // última ronda: dejar 2 sí o sí
+        toRemove = Math.max(0, remaining.length - 2);
+      }
+      toRemove = Math.min(toRemove, remaining.length - 2);
+
+      const removed = shuffle(remaining).slice(0, toRemove);
+      const keep = new Set(remaining);
+      removed.forEach(n => keep.delete(n));
+      remaining = Array.from(keep);
+
+      // Mostrar excluidos
+      const excl = document.createElement("div"); excl.className="ev-row";
+      if (removed.length){
+        const pre=document.createElement("span"); pre.className="txt"; pre.textContent="Fueron excluidos: ";
+        excl.appendChild(pre);
+        removed.forEach(n => excl.appendChild(chipOrBold(n)));
+      } else {
+        const pre=document.createElement("span"); pre.className="txt"; pre.textContent="Nadie fue excluido.";
+        excl.appendChild(pre);
+      }
+      add(excl);
+    }
+
+    // Finalistas
+    if (remaining.length===2){
+      const fin = row(["Finalistas: ", {chip:remaining[0]}, " y ", {chip:remaining[1]}]);
+      add(fin);
+    }
+
+    if (typeof evShow==="function") return evShow();
+  };
+
+  // Opción en el <select>
+  setTimeout(()=>{
+    const sel=$id("challengeSelect"); if(!sel) return;
+    const label="Excluir";
+    if(!Array.from(sel.options).some(o=>(o.textContent||"").trim()===label)){
+      const opt=document.createElement("option"); opt.textContent=label; sel.appendChild(opt);
+    }
+  },0);
+})();
+
+
+// Covers 
+if (type === "Covers") {
+  const add = (el)=> list.appendChild(el);
+
+  // Pool de canciones (copia), y orden de participantes levemente aleatorio
+  const pool = (window.SONGS || []).slice();
+  const jugadores = shuffle(alive.slice()); // cambia el orden de quién toma primero
+
+  add(titleRow("Sesión de Covers"));
+
+  jugadores.forEach((n, i) => {
+    let song = "Tema libre";
+    if (pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length); // índice aleatorio
+      song = pool.splice(idx, 1)[0];                       // tomar y remover
+    } else {
+      // si se agota el pool, usa un marcador distinto para que no se repita literal
+      song = `Tema libre #${i+1}`;
+    }
+    add(evRowSingle(n, `Realizó un cover de “${song}”.`));
+  });
+
+  return evShow();
+}
+
+
+
+/* ---------- Sillas Musicales (mínimo estable con helpers) ---------- */
+else if (type === "Sillas Musicales") {
+  const add = (el)=> list.appendChild(el);
+
+
+  let remaining = shuffle(alive.slice());
+  const total = remaining.length;
+  const winnersTarget = (total <= 10) ? 3 : 4;          // 3 si <=10; si no 4
+  const totalElim = Math.max(0, total - winnersTarget);
+  const base = Math.floor(totalElim / 4);
+  const rem  = totalElim % 4;
+  const perRound = [0,1,2,3].map(i => base + (i < rem ? 1 : 0));
+
+
+  let songs = (window.SONGS||[]).slice();
+  shuffle(songs);
+
+  // 3) rondas (no llames helpers aquí; solo narrativa + estado)
+  for (let r=0; r<4 && remaining.length > winnersTarget; r++){
+    const song = songs.length ? songs.shift() : `Canción ${r+1}`;
+    add(titleRow(`Ronda ${r+1}`));
+    add(evRowSingle("Bonju", `La música empezó — suena “${song}”.`));
+
+    const elimCount  = Math.min(perRound[r], remaining.length - winnersTarget);
+    const eliminated = shuffle(remaining.slice()).slice(0, elimCount);
+    const survivors  = remaining.filter(n => !eliminated.includes(n));
+
+    add(evRowSingle("Bonju", "¡La música se detuvo!"));
+    survivors.forEach(n  => add(evRowSingle(n, "Logró sentarse a tiempo y avanza de ronda.")));
+    eliminated.forEach(n => add(evRowSingle(n, "Quedó fuera por quedarse sin silla.")));
+
+    remaining = survivors;
+  }
+
+  // 4) mostrar ganadores del juego (narrativa)
+  add(titleRow("Ganadores/as"));
+  remaining.forEach(n => add(evRowSingle(n, "Se mantiene en juego tras 4 rondas.")));
+
+  // 5) PINTADO DE INMUNIDAD (¡aquí recién llamas a helpers!)
+  const ph = (typeof currentPhase==="function") ? currentPhase(episode) : {id:3};
+
+  evShow(); 
+  return;
+}
+
+
+
+
+  // Entrevista de Trabajo — todos participan, por defecto no contratados (narrativo)
+  if (type === "Entrevistas de Trabajo") {
+    const add = (el)=> list.appendChild(el);
+    add(titleRow("Entrevistas del Día"));
+    alive.slice().forEach(n => add(evRowSingle(n, " NO FUE CONTRATAD" + genderSuffix(n) + ".")));
+    return evShow();
+  }
+
+
+/* ---------- Romper Hielos (solo narrativa, reparto amplio) ---------- */
+else if (type === "Romper Hielos") {
+  const add = (el)=> list.appendChild(el);
+
+  const vivos = alive.slice();
+  if (vivos.length <= 1){
+    add(titleRow("Romper Hielos"));
+    if (vivos[0]) add(evRowSingle(vivos[0], "Ganó por ser el único con base intacta."));
+    evShow(); return;
+  }
+
+  // Todos arrancan con su base intacta
+  const intactos = new Set(vivos);
+  const fuera    = new Set();         // a quienes ya les rompieron la base
+  const usadosAsaltante = new Set();  // para repartir quién ataca
+
+  // Meta: que quede exactamente 1 con base intacta
+  while (intactos.size - fuera.size > 1){
+    // Selecciona un atacante que NO haya spameado (resetea si ya se usaron todos)
+    let candidatos = [...intactos].filter(n => !fuera.has(n) && !usadosAsaltante.has(n));
+    if (!candidatos.length){ usadosAsaltante.clear(); candidatos = [...intactos].filter(n=>!fuera.has(n)); }
+    const atacante = pick(candidatos);
+
+    // Elige objetivo válido (intacto y distinto del atacante)
+    const posibles = [...intactos].filter(n => n !== atacante && !fuera.has(n));
+    if (!posibles.length){
+      // Si no hay objetivo (quedan 2 y uno ya cayó por resbalón), auto–resbalón opcional
+      const selfSlip = Math.random() < 0.20;
+      if (selfSlip){
+        add(evRowSingle(atacante, "Se resbaló y rompió su propio hielo."));
+        fuera.add(atacante);
+      }
+      if (intactos.size - fuera.size <= 1) break;
+      continue;
+    }
+    const objetivo = pick(posibles);
+
+    // 15% de prob. de resbalar y auto-romper; si no, rompe al objetivo
+    if (Math.random() < 0.15){
+      add(evRowSingle(atacante, "Se resbaló durante el reto y rompió su propio hielo."));
+      fuera.add(atacante);
+    } else {
+      // Fila clara: [Atacante] — Rompió la base de hielo de — [Objetivo]
+      {
+        const row = document.createElement("div");
+        row.className = "ev-row";
+        row.appendChild(chip(atacante, atacante));
+
+        const txt = document.createElement("span");
+        txt.className = "txt";
+        txt.textContent = " — Rompió la base de hielo de ";
+        row.appendChild(txt);
+
+        row.appendChild(chip(objetivo, objetivo));
+        add(row);
+      }
+      fuera.add(objetivo);
+    }
+    usadosAsaltante.add(atacante);
+  }
+
+  // Ganador/es (quien/es con base intacta)
+  const ganadores = [...intactos].filter(n => !fuera.has(n));
+  add(titleRow("Resultado"));
+  ganadores.forEach(n => add(evRowSingle(n, "Bonju rompió su base de hielo para que no interfiera con sus planes de favoritismo.")));
+  evShow(); return;
+}
+
+
+
+  /* ---------- La Bomba 💣 (solo narrativa, 2 fases) ---------- */
+else if (type === "La Bomba") {
+  const add = (el)=> list.appendChild(el);
+
+  let vivos = shuffle(alive.slice());
+  if (vivos.length <= 1){
+    add(titleRow("La Bomba"));
+    if (vivos[0]) add(evRowSingle(vivos[0], "Sobrevivió por ser la única persona en pie."));
+    evShow(); return;
+  }
+
+  // Fase 1 — se tiran bombas (se eliminan hasta quedar 4)
+  add(titleRow("Fase 1 · Lanzamiento de bombas"));
+  while (vivos.length > 4){
+    const atacante = pick(vivos);
+    const objetivos = vivos.filter(n => n !== atacante);
+    if (!objetivos.length) break;
+    const objetivo = pick(objetivos);
+
+    // Fila clara: [Atacante] — Le tiró la bomba a — [Objetivo]
+    {
+      const row = document.createElement("div");
+      row.className = "ev-row";
+      row.appendChild(chip(atacante, atacante));
+
+      const txt = document.createElement("span");
+      txt.className = "txt";
+      txt.textContent = " — Le tiró la bomba a ";
+      row.appendChild(txt);
+
+      row.appendChild(chip(objetivo, objetivo));
+      add(row);
+    }
+
+    vivos = vivos.filter(n => n !== objetivo);
+    add(evRowSingle(objetivo, "Quedó fuera del reto."));
+  }
+
+  // Fase 2 — explosiones aleatorias hasta 1
+  add(titleRow("Fase 2 · Último en pie"));
+  while (vivos.length > 1){
+    const caido = pick(vivos);
+    add(evRowSingle(caido, "Le explotó una bomba encima."));
+    vivos = vivos.filter(n => n !== caido);
+  }
+
+  // Ganador/a
+  const winner = vivos[0];
+  add(titleRow("Resultados"));
+  if (winner) add(evRowSingle(winner, "Le cayó una bomba encima y se fue a la Marianito."));
+  evShow(); return;
+}
+
+
+
+  /* ---------- Expedición Turística en la Antártida (solo narrativa) ---------- */
+else if (type === "Expedición Turística en la Antártida") {
+  const add = (el)=> list.appendChild(el);
+  const group = shuffle(alive.slice());
+
+  add(titleRow("Etapas de la Expedición"));
+  add(evNote("Marcha en hielo buscando las siguientes bases • escalada ligera • búsqueda de bases • carrera • travesía final al mirador."));
+
+  // Etapa 1 — Marcha
+  add(titleRow("Etapa 1 · Marcha en hielo"));
+  group.forEach(n => add(evRowSingle(n, "Avanzó desde la base principal y recorrió las diferentes montañas y icebergs en su recorrido.")));
+
+  // Etapa 2 — Escalada
+  add(titleRow("Etapa 2 · Escalada ligera"));
+  sample(group, Math.max(1, Math.floor(group.length*0.3))).forEach(n => add(evRowSingle(n, "Completó un tramo de ascenso con buen control.")));
+  sample(group, Math.max(1, Math.floor(group.length*0.2))).forEach(n => add(evRowSingle(n, "Resbaló en una sección y debió reintentar.")));
+
+  // Etapa 3 — Bases
+  add(titleRow("Etapa 3 · Bases en la Ántartida"));
+  sample(group, Math.max(2, Math.floor(group.length*0.4))).forEach(n => add(evRowSingle(n, "Cambió su ropa, busco alimentos, armas y luego descanso en la base encontrada.")));
+  sample(group, Math.max(1, Math.floor(group.length*0.2))).forEach(n => add(evRowSingle(n, "Tuvo problemas con el viento durante su recorrido y tardó más de lo previsto en encontrar una base.")));
+
+  // Etapa 4 — Carrera
+  add(titleRow("Etapa 4 · Búsqueda de provisiones"));
+  const foragers = sample(group, Math.max(2, Math.floor(group.length*0.5)));
+  foragers.forEach(n => add(evRowSingle(n, "Agarro su Moto Nieve y empezo su recorrido hasta la base final.")));
+
+  // Etapa 5 — Travesía final
+  add(titleRow("Etapa 5 · Travesía al mirador"));
+  sample(group, Math.max(1, Math.floor(group.length*0.3))).forEach(n => add(evRowSingle(n, "Navegó grietas y marcó una ruta segura.")));
+
+  // Cierre
+  add(titleRow("Líderes en la Expedición"));
+  sample(group, Math.min(3, Math.max(1, Math.floor(group.length*0.15)))) // 1–3 “destacados”
+    .forEach(n => add(evRowSingle(n, "Destacó en varios momentos de la expedición.")));
+
+  evShow(); return;
+}
+
+
+/* ---------- Wipeout 💦 (solo narrativa) ---------- */
+else if (type === "Wipeout 💦") {
+  const add = (el)=> list.appendChild(el);
+
+  let remaining = shuffle(alive.slice());
+  const total = remaining.length;
+
+  if (total <= 1){
+    add(titleRow("Wipeout"));
+    if (remaining[0]) add(evRowSingle(remaining[0], "Logró completar todos los circuitos sin caer al agua."));
+    evShow(); return;
+  }
+
+  // Eliminar hasta quedar 1, repartiendo en 4 rondas
+  const totalElim = Math.max(0, total - 1);
+  const base = Math.floor(totalElim / 4);
+  const rem  = totalElim % 4;
+  const perRound = [0,1,2,3].map(i => base + (i < rem ? 1 : 0));
+
+  for (let r = 0; r < 4 && remaining.length > 1; r++){
+    add(titleRow(`Ronda ${r+1}`));
+    const elimCount = Math.min(perRound[r], remaining.length - 1);
+    const out = shuffle(remaining.slice()).slice(0, elimCount);
+    out.forEach(n => add(evRowSingle(n, "Cayó al agua y quedó eliminad" + genderSuffix(n) + " del reto.")));
+    remaining = remaining.filter(n => !out.includes(n));
+  }
+  const winner = remaining[0];
+  add(titleRow("Ronda Final"));
+  if (winner) add(evRowSingle(winner, "Logró completar todos los circuitos, pero en el último piso unos trozos de mi*rd* cortesía de Dua Lingo y se cayó al agua."));
+  evShow(); return;
+}
+
+
+  // Noticiero
+  if (type === "Noticiero") {
+    const phaseNow = currentPhase(episode);
+    const newsNames = ["Changamoto News", "The Xfiles", "The E!"];
+    const chosenNews = shuffle(newsNames);
+    if (phaseNow.id <= 2) {
+      const map = (phaseNow.id === 1 ? distribution3 : distribution2) || {};
+      Object.keys(map).forEach((team, idx) => {
+        const row = document.createElement("div"); row.className = "ev-row";
+        (map[team] || []).filter(n => alive.includes(n)).forEach(n => row.appendChild(chip(n, n)));
+        const t = document.createElement("span"); t.className = "txt";
+        const nn = chosenNews[idx % chosenNews.length];
+        t.textContent = ` (${team}) realizó el noticiero ${nn}.`;
+        row.appendChild(t);
+        list.appendChild(row);
+      });
+    } else {
+      const pool = alive.slice();
+      while (pool.length) {
+        const a = pool.shift() || null;
+        const b = pool.shift() || null;
+        const c = (pool.length && Math.random() < 0.5) ? pool.shift() : null;
+        const row = document.createElement("div"); row.className = "ev-row";
+        if (a) row.appendChild(chip(a, a));
+        if (b) row.appendChild(chip(b, b));
+        if (c) row.appendChild(chip(c, c));
+        const t = document.createElement("span"); t.className = "txt";
+        t.textContent = " realizaron un segmento especial del noticiero.";
+        row.appendChild(t);
+        list.appendChild(row);
+      }
+    }
+  }
+
+  // Suerte
+  if (type === "Suerte") {
+    list.appendChild(titleRow("Botellas misteriosas"));
+    const unlucky = sample(alive, Math.max(1, Math.floor(alive.length * 0.2)));
+    unlucky.forEach(n => list.appendChild(evRowSingle(n, "quedó fuera al aparecer su nombre en una botella.")));
+  }
+
+  // Bonju Chef
+  if (type === "Bonju Chef") {
+    const pool = shuffle(alive);
+    if (pool.length >= 2) list.appendChild(evRowPair(pool[0], pool[1], "se tiraron aceite hirviendo."));
+    if (pool.length >= 3) list.appendChild(evRowSingle(pool[2], "se comió la comida."));
+    if (pool.length >= 4) list.appendChild(evRowSingle(pool[3], "creó un platillo delicioso."));
+    if (pool.length >= 5) list.appendChild(evRowSingle(pool[4], "dejó quemar su comida."));
+  }
+
+  // ¿Quién mató a Bonju?
+  if (type === "¿Quién mató a Bonju?") {
+    if (alive.includes("Nidia Mirella")) {
+      list.appendChild(evRowSingle("Nidia Mirella", "descubrió la identidad del asesino."));
+    }
+    if (alive.length >= 2) {
+      const [a, b] = sample(alive, 2);
+      list.appendChild(evRowPair(a, b, "acusó a " + b + " de ser el asesino."));
+    }
+    const others = shuffle(alive).slice(0, Math.max(2, Math.floor(alive.length * 0.25)));
+    others.forEach(n => list.appendChild(evRowSingle(n, "descubrió pistas acerca del homicidio.")));
+  }
+
+  // Town of Salem
+  if (type === "Town of Salem") {
+    const must = ["Doctor", "Investigator", "Bodyguard", "Medium", "Godfather", "Mafioso"];
+    const other = ["Escort", "Jailor", "Sheriff", "Spy", "Vampire Hunter", "Veteran", "Perfumer", "Jester", "Forger", "Moll"];
+    const neutrals = ["Arsonist", "The Plaguebearer", "Witch", "Serial Killer", "Vampire", "Werewolf"]; // máx 2
+    const poolRoles = alive.slice();
+    const assign = {}; const used = new Set();
+    function takePlayer(){ return poolRoles.splice(Math.floor(Math.random()*poolRoles.length),1)[0]; }
+    function give(role){ if(used.has(role) || !poolRoles.length) return; const p = takePlayer(); assign[p]=role; used.add(role); }
+    must.forEach(give);
+    let neutralsPool = neutrals.slice();
+    for (let i=0; i<2 && poolRoles.length && neutralsPool.length; i++) {
+      const idx = Math.floor(Math.random()*neutralsPool.length);
+      give(neutralsPool.splice(idx,1)[0]);
+    }
+    let otherPool = other.slice();
+    while (poolRoles.length && otherPool.length) {
+      const idx = Math.floor(Math.random()*otherPool.length);
+      give(otherPool.splice(idx,1)[0]);
+    }
+    // Mostrar roles
+    const group = document.createElement("div"); group.className = "ev-group";
+    const sub = document.createElement("div"); sub.className = "ev-sub"; sub.textContent = "Roles asignados"; group.appendChild(sub);
+    Object.keys(assign).forEach(name => {
+      const row = document.createElement("div"); row.className = "ev-row";
+      row.appendChild(chip(name, name));
+      const span = document.createElement("span"); span.className = "txt";
+      const role = assign[name];
+      span.textContent = " — " + role;
+      if (["Godfather", "Mafioso", "Forger", "Moll"].includes(role)) span.style.color = "#b91c1c"; // rojo
+      if (neutrals.includes(role)) span.style.color = "#064e3b"; // verde oscuro
+      row.appendChild(span); group.appendChild(row);
+    });
+    list.appendChild(group);
+
+    // Noches / Día (muertes y escapes)
+    const aliveNow = alive.slice();
+    const survivorsTarget = (aliveNow.length >= 14) ? 4 : 2;
+    const winners = sample(aliveNow, Math.min(survivorsTarget, aliveNow.length));
+    const deaths = aliveNow.filter(n => !winners.includes(n));
+    const nights = [1,2,3,4,5];
+    const perNight = Math.ceil(deaths.length / nights.length);
+    let ptr = 0;
+    nights.forEach(n => {
+      const chunk = deaths.slice(ptr, ptr + perNight); ptr += perNight;
+      if (chunk.length) {
+        const row = document.createElement("div"); row.className = "ev-row";
+        chunk.forEach(p => row.appendChild(chip(p, p)));
+        const t = document.createElement("span"); t.className = "txt"; t.textContent = " Murieron en el transcurso de la noche.";
+        row.appendChild(t); list.appendChild(row);
+      }
+    });
+    if (winners.length) {
+      const row = document.createElement("div"); row.className = "ev-row";
+      winners.forEach(p => row.appendChild(chip(p, p)));
+      const t = document.createElement("span"); t.className = "txt"; t.textContent = " Lograron escapar.";
+      row.appendChild(t); list.appendChild(row);
+    }
+  }
+
+  // Bonju Drag Race (mini-retos en secuencia, evitando inmunes en fase individual si existen)
+  if (type === "Bonju Drag Race") {
+    const mini = ["Variety Show","Ball","Acting","Snatch Game","The Musical","Commercial","Singing","Improvisation","Design","Bonju's Roast","Makeover","Music Video"];
+    const phaseNow = currentPhase(episode);
+    let pool = alive.slice();
+    if (phaseNow.id >= 3 && Array.isArray(window.immunes) && window.immunes.length) {
+      pool = pool.filter(n => !window.immunes.includes(n));
+      if (!pool.length) pool = alive.slice();
+    }
+    const rounds = Math.min(mini.length, Math.max(0, pool.length - 1));
+    for (let i = 0; i < rounds; i++) {
+      if (pool.length <= 1) break;
+      const out = pool[Math.floor(Math.random() * pool.length)];
+      pool = pool.filter(n => n !== out);
+      const row = document.createElement("div"); row.className = "ev-row";
+      const pre = document.createElement("span"); pre.className = "txt"; pre.textContent = `${i+1}. ${mini[i]}: `;
+      row.appendChild(pre);
+      row.appendChild(chip(out, out));
+      const t = document.createElement("span"); t.className = "txt"; t.textContent = " Fue eliminado";
+      row.appendChild(t);
+      list.appendChild(row);
+    }
+  }
+
+  // Top Model: elimina hasta dejar 2 finalistas
+  if (type === "Top Model") {
+    const pool = alive.slice();
+    if (pool.length > 2) {
+      const winners = sample(pool, 2);
+      const losers = pool.filter(n => !winners.includes(n));
+      losers.forEach(p => {
+        const row = document.createElement("div"); row.className = "ev-row";
+        row.appendChild(chip(p, p));
+        const t = document.createElement("span"); t.className = "txt"; t.textContent = " fue eliminado";
+        row.appendChild(t); list.appendChild(row);
+      });
+    }
+  }
+
+
+// Duelos — llaves VS; si queda impar, armar duelo de 3
+if (type === "Duelos") {
+  const pool = alive.slice();
+  list.appendChild(titleRow("Llaves de duelo"));
+  while (pool.length) {
+    if (pool.length === 3) {
+      const [a,b,c] = pool.splice(0,3);
+      const row = document.createElement("div");
+      row.className = "ev-row ev-vs";
+      row.appendChild(chip(a,a));
+      const vs1 = document.createElement("span"); vs1.className="vs"; vs1.textContent="VS"; row.appendChild(vs1);
+      row.appendChild(chip(b,b));
+      const vs2 = document.createElement("span"); vs2.className="vs"; vs2.textContent="VS"; row.appendChild(vs2);
+      row.appendChild(chip(c,c));
+      list.appendChild(row);
+      break;
+    }
+    const a = pool.shift() || null;
+    const b = pool.shift() || null;
+    const row = document.createElement("div"); 
+    row.className = "ev-row ev-vs";
+    if (a) row.appendChild(chip(a, a));
+    const vs = document.createElement("span"); vs.className = "vs"; vs.textContent = "VS";
+    row.appendChild(vs);
+    if (b) row.appendChild(chip(b, b));
+    list.appendChild(row);
+  }
+  evShow();
+  return;
+}
+
+  /* ---------- BASE (si no es uno de los 4 super-especiales) ---------- */
+  if (!["Show de Talentos","Bonju Drag Race","Town of Salem","Top Model"].includes(type)) {
+    if (alive.includes("Iñaella Rose")) list.appendChild(evRowSingle("Iñaella Rose","No entendió el reto."));
+     if (alive.includes("Adriana Pereira")) list.appendChild(evRowSingle("Adriana Pereira","Se durmió en el reto."));
+     if (alive.includes("Dani")) list.appendChild(evRowSingle("Dani","Acosó a las mujeres del cast."));
+    if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Tuvieron una fuerte discusión.")); }
+    if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Hicieron planes para hacer el amor detrás de cámaras.")); }
+    if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"Se sacaron la Xina Ro a golpes por un desacuerdo.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Tuvo un desempeño impecable en el reto.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Pasó vergüenza ajena en el reto.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Se puso a llorar en el reto.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Amenazó con denunciar a Bonju por Sobreexplotación.")); }
+    if (alive.length){ const [a] = sample(alive,1); list.appendChild(evRowSingle(a,"Hizo trampa en el reto.")); }
+    if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"" + a + " intentó formar una alianza con " + b + ".")); }
+    if (alive.length >= 2){ const [a,b] = sample(alive,2); list.appendChild(evRowPair(a,b,"" + a + " estuvo pidiendole a los demás que nominarán a " + b + " al Duelo de Eliminación.")); }
+  }
+
+  /* ---------- Mensaje fijo del reto elegido (dentro del scope correcto) ---------- */
+  const msgMap = {
+    "Rápidez":"Fue la persona más rápida del reto.",
+    "Estrategia":"Creo mejores estrategias que los demás.",
+    "Creatividad":"Fue la persona más creativa de este desafío.",
+    "Inteligencia":"Acertó la mayoría de preguntas.",
+    "Agilidad":"Más ágil de este reto.",
+    "Búsqueda":"Encontró más objetos que el resto de sus compañeros.",
+    "Moda":"Dejó a todos con la boca abierta con su look.",
+    "Cultura & Conocimiento":"Tuvo mejor conocimiento y cultura general que el resto.",
+    "Rap": (Math.random()<0.5 ? "Se quedó sin voz durante su verso." : "utilizó la N Word en su verso."),
+    "Música":"Sorprendió con su interpretación.",
+    "Town of Salem":"Fue el mejor de la partida.",
+    "Duelos":"Quedó con heridas después de su Duelo.",
+    "Show de Talentos":"Deslumbró al público con su número.",
+    "Noticiero":"Informó y divirtió a la audiencia con sus noticias.",
+    "Suerte":"Tomó un riesgo calculado que le salió bien.",
+    "Bonju Chef":"Fue la única persona que no hizo vomitar a Bonju",
+    "¿Quién mató a Bonju?":"Descubrió pistas confidenciales para resolver el crimen.",
+    "Bonju Drag Race":"Fue la mejor Drag del episodio.",
+    "Top Model":"Sus fotos fueron increibles, dignas de un/a Modelo/a con experiencia."
+  };
+  if (type && msgMap[type] && alive.length){
+    const who = alive[Math.floor(Math.random()*alive.length)];
+    list.appendChild(evRowSingle(who, msgMap[type]));
+  }
+
+  /* ---------- Show de Talentos (listado por persona) ---------- */
+  if (type === "Show de Talentos"){
+    const talents = {
+    "Dios":"Todos los talentos del mundo",
+    "Coronel":"Poner vacunas",
+    "Dani":"Comer Galletas",
+    "Felix":"Intento cantar Abracadabra pero se quedo sin voz",
+    "Emanuel":"Hacer Ciberbullyng",
+    "Beto":"Estafar personas",
+    "Vita":"Renunciar a Competencias",
+    "Eduardo":"Tocarse la guitarra",
+    "Peggy":"Tomar 1.000 cervezas",
+    "Ivan Serrano":"Cover de Shaket If Off",
+    "Julián":"Grabarse para Facebook",
+    "Alexandro":"Hizo un mapa y se tardó 6 horas",
+    "Isabel":"Cosplay de Nidia Mirella",
+    "Pier":"Ladrar en vivo",
+    "Bryan Montalvo":"Show de Scort",
+    "Daelly":"Hacer un Noticiero",
+    "Andromeda":"Jugar Genshit Impact 4 dias seguidos",
+    "Luciano":"Colapsar por Internet",
+    "Iñaella Rose":"Peinarse",
+    "Ximena":"Doblaje de Voz",
+    "Ignacio Ricci":"Mandar audios de 2 mil horas",
+    "Lucas Mendez":"Hacer una lista en facebook de 49574 canciones de mejor a peor",
+    "Greg":"Filtrar conversaciones",
+    "Garnet":"Crear una casa (En Habbo)",
+    "Elvin":"Vinagrar comida",
+    "Bayron":"Cagarse los pañales",
+    "Oscar":"Lip Sync de Karol G",
+    "Sandro":"Cantar",
+    "San":"Cantar",
+    "Esteban":"Pelear por 3 días",
+    "Rafael":"Envenenar gente",
+    "Nidia Mirella":"Hacerse pasar por alguien",
+    "Emmy Mango":"Ponerle hielo a un vaso de agua",
+    "Lalamila":"Sacarse mocos",
+    "Edna Droga":"Armar un porro",
+    "Cocomong":"Interpretación de Llego el Pavo",
+    "Azealia Midnight":"Comer croquetas",
+    "Eris Midnight":"Desnudarse",
+    "Catalina":"Acapella de Hakuna Matata",
+    "Dua Lingo":"Hablar en diferentes idiomas",
+    "Xina Ro":"Hacer el Challenge de 51 Embarazos en los Sims",
+    "Eduard":"Hacer Panes",
+    "Renata":"Hacer Storyboards, Vestida de Travesti",
+    "Ivy":"Drogarse en Vivo",
+    "Adriana Pereira":"Se durmió en su Segmento",
+    "Christopher":"Cagarse los Boxers",
+    "Gabriel Sab":"Nunca callarse",
+    "Marianito":"Tirarse a la Piscina",
+    "Anderson Moreno":"Mandar audios insultando",
+    "Stalin Mango":"Licuar frutas",
+    "Silvanya D'Lemberth":"Hacer Boicots",
+    "Leandro":"Salirse de Chats",
+    "Ian Esteban":"Apostar",
+    "Elian":"Descubrir Identidades",
+    "Alice":"Disecar una Rana",
+    "Renzo":"Crear una comunidad de pacientes mentales no tratados",
+    "Paulis Queen":"Travestismo",
+    "Kim Camila":"Rutina de Cardio",
+    "Bruno Macri":"Dispararle a inocentes",
+    "Nahuee":"Hacer pozole de Lavadero",
+    "Ari Salgado":"Buscar idolos",
+    "Marcos":"Video para 0nlyfans",
+    "Azael":"Cantar Ópera",
+    "Paula Garcia":"Jugar la Ouija",
+    "Samuel Gamert":"Malabares",
+    "Doppel":"Leer el Tarot",
+    "Mary Hao":"Cover de Dynamite - BTS",
+    "Plastique Doll":"Matar pájaros con el aliento",
+    "Amanda Lewis":"Matar ratones",
+    "Nicki Gorilaj":"Trepar Árboles",
+    "Ocean Harmony":"La producción se olvido quien era y no le dieron tiempo",
+    "Vitany Glambert":"Fingir ser amable"
+  };
+    const group = document.createElement("div"); group.className="ev-group";
+    const sub   = document.createElement("div"); sub.className="ev-sub"; sub.textContent="Talentos";
+    group.appendChild(sub);
+
+    alive.forEach(n=>{
+      const row = document.createElement("div"); row.className="ev-row";
+      row.appendChild(chip(n,n));
+      const t = document.createElement("span"); t.className="txt";
+      t.textContent = " " + (talents[n] || "—");
+      row.appendChild(t);
+      group.appendChild(row);
+    });
+    list.appendChild(group);
+  }
+
+  /* ---------- Especiales por presencia y notas ---------- */
+  renderSpecials(list, type, alive, episode);
+  if (episode === 9) list.appendChild(evNote("COMEBACK — compiten sólo los eliminados"));
+  if (episode >= 18) list.appendChild(evNote("FINAL — Los dos últimos en llegar quedan eliminados."));
+
+  evShow();
+}
+
+
+
+runChallenge.addEventListener("click", () => {
+  updateChallengeAvailability();
+  const chosen = challengeSelect.value || "";
+
+  // Debe elegirse un reto (excepto si tienes lógica especial en ep18)
+  if (episode !== 18 && !chosen) {
+    toast("Selecciona el tipo de reto.");
+    return;
+  }
+
+  if (chosen) {
+    const allowed = (chosen === "Town of Salem") ? 2 : 1;
+
+    // ep9 con formato Duelos: permitir Duelos aunque ya se haya usado antes
+    if (!(chosen === "Duelos" && episode === 9 && comebackMode === "Duelos") &&
+        usedCount(chosen) >= allowed) {
+      toast("Ese reto ya se usó al máximo en esta simulación.");
+      return;
+    }
+
+    // Gating por episodio
+    if (chosen === "Top Model" && episode < 10) {
+      toast("Top Model se activa desde el episodio 10.");
+      return;
+    }
+    if (chosen === "Bonju Drag Race" && episode < 10) {
+      toast("Bonju Drag Race se activa desde el episodio 10.");
+      return;
+    }
+    if (chosen === "Excluir" && episode < 2) {
+      toast("Excluir se activa desde el episodio 2.");
+      return;
+    }
+    if (chosen === "Roba un Bonjuroit" && episode < 2) {
+      toast("Roba un Bonjuroit se activa desde el episodio 2.");
+      return;
+    }
+    if (chosen === "Town of Salem" && episode >= 15) {
+      toast("Town of Salem no está disponible del 15 al 18.");
+      return;
+    }
+
+    // En ep9 con formato Duelos, sólo se permite Duelos
+    if (episode === 9 && comebackMode === "Duelos" && chosen !== "Duelos") {
+      toast("En el episodio 9 con formato de regreso 'Duelos', sólo puedes elegir Duelos.");
+      return;
+    }
+
+    // Show de Talentos: sólo 1 vez por simulación (sin variables extra)
+    if (chosen === "Show de Talentos" && usedCount("Show de Talentos") >= 1) {
+      toast("El Show de Talentos solo puede usarse una vez por simulación.");
+      return;
+    }
+  }
+
+  // Evitar regenerar el mismo episodio
+  if (challengeLockedEp === episode) {
+    toast("El reto de este episodio ya fue generado.");
+    return;
+  }
+
+  // ---------- Preparación de UI ----------
+  const phase = currentPhase(episode);
+  const summary = $("#challengeSummary"); summary.innerHTML = "";
+  $("#bonjuBox").style.display = "block";
+
+  let winTeam = null;
+  immunes = [];
+
+  // ---------- Lógica por episodio ----------
+  if (episode === 18) {
+    // FINAL — PARTE 1 (Top 4 => finalistas + eliminados)
+    const top4 = getAlive().slice(0, 4);
+    if (top4.length < 2) { toast("Final requiere al menos 2 jugadores."); return; }
+
+    const ranking = shuffle(top4);
+    const eliminatedFinal = ranking.slice(2);
+    finalState.finalists = ranking.slice(0, 2);
+    finalState.eliminated = eliminatedFinal;
+
+    // Marcar Final column
+    eliminatedFinal.forEach(n => {
+      const rec = trackData.find(r => norm(r.name) === norm(n));
+      rec.final = { cls: 'elim', txt: 'Eliminated' };
+      if (!eliminated.includes(n)) eliminated.push(n);
+      removeEvery(activePlayers, n);
+    });
+    finalState.stage = 0; // listo parte 1
+
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Final — Parte 1</span>`;
+    const fTop = $("#finalTop4");
+    if (fTop) {
+      fTop.innerHTML = "";
+      ranking.forEach(n => fTop.appendChild(chip(n, n)));
+      fTop.classList.remove("hide");
+    }
+    $("#immuneList").innerHTML = "";
+    finalState.eliminated.forEach(n => $("#immuneList").appendChild(chip(n, "Eliminado")));
+    $("#winnersTitle").textContent = "Final — Eliminados";
+    $("#goVests").textContent = "Asignar chalecos (Final) →";
+
+ } else if (episode === 9) {
+  // Comeback: sólo eliminados compiten (Duelos o Estrellas)
+  const retired = uniqueList(eliminated.slice());
+  if (retired.length === 0) { toast("No hay eliminados para comeback."); return; }
+
+  // SIEMPRE pintar la tira de avatares de eliminados (arriba)
+  const cbTop = $("#cbTopElims");
+  if (cbTop) {
+    cbTop.innerHTML = "";
+    retired.forEach(n => cbTop.appendChild(chip(n, n)));
+    cbTop.classList.remove("hide");
+  }
+
+  if (comebackMode === "Estrellas") {
+    // ⭐ Modo Estrellas: muestra puntuación 1–10; ganadores con 9–10
+  const elegibles = retired.filter(n => !(window._seasonPurgados && window._seasonPurgados.has(norm(n))));
+const winners = (elegibles.length >= 2) ? shuffle(elegibles).slice(0,2) : elegibles.slice(0,1);
+    const stars = {};
+    retired.forEach(n=>{
+      stars[n] = winners.includes(n) ? 9 + Math.floor(Math.random()*2)   // 9–10
+                                    : 1 + Math.floor(Math.random()*9);   // 1–9
+    });
+
+    // UI: tablero de estrellas en "Eventos del episodio"
+    evClear();
+    const list  = $("#eventsList");
+    const group = document.createElement("div"); group.className = "ev-group";
+    const sub   = document.createElement("div"); sub.className = "ev-sub"; sub.textContent = "Estrellas del comeback";
+    group.appendChild(sub);
+
+    const order = retired.slice().sort((a,b)=> stars[b] - stars[a]);
+    order.forEach(n=>{
+      const row = document.createElement("div"); row.className = "ev-row";
+      row.appendChild(chip(n, n));
+      const t = document.createElement("span"); t.className="txt"; t.textContent = " — ⭐ " + stars[n];
+      row.appendChild(t);
+      group.appendChild(row);
+    });
+    list.appendChild(group);
+    evShow();
+
+    // Mostrar ganadores en la caja de "Ganadores del comeback"
+    predefinedComebackWinners = winners.slice();
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Comeback (Estrellas)</span>`;
+    $("#immuneList").innerHTML = "";
+    winners.forEach(n => $("#immuneList").appendChild(chip(n, `Regresa: ${n}`)));
+    $("#winnersTitle").textContent = "Ganadores del comeback";
+    $("#goVests").textContent = "Aplicar comeback →";
+
+    $("#winnersBox").classList.remove("hide");
+    updateChallengeAvailability();
+    challengeLockedEp = episode;
+    runChallenge.disabled = true;
+    return; // <- evita que el código genérico limpie y re-pinte los eventos
+
+  } else {
+    // Modo actual (p. ej. Duelos): lista de eliminados + 2 que regresan
+const elegibles = retired.filter(n => !(window._seasonPurgados && window._seasonPurgados.has(norm(n))));
+predefinedComebackWinners = (elegibles.length >= 2)
+  ? shuffle(elegibles).slice(0, 2)
+  : elegibles.slice(0, 1);
+
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Comeback</span>`;
+    $("#immuneList").innerHTML = "";
+    predefinedComebackWinners.forEach(n => $("#immuneList").appendChild(chip(n, `Regresa: ${n}`)));
+    $("#winnersTitle").textContent = "Ganadores del comeback";
+    $("#goVests").textContent = "Aplicar comeback →";
+  }
+
+  } else if (phase.id <= 2) {
+    if (phase.id === 2) { try { ensureDistribution2(); } catch(e){} }
+
+    // Fases grupales
+    const teamsList = (phase.id === 1)
+      ? selectedTeams
+      : (Object.keys(distribution2).length ? Object.keys(distribution2) : ["Equipo A", "Equipo B"]);
+    winTeam = pick(teamsList);
+    const list = (phase.id === 1 ? distribution3[winTeam] : distribution2[winTeam]) || [];
+    const alive = getAlive();
+    immunes = list.filter(n => alive.includes(n));
+
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Equipo ganador: <b>${winTeam}</b></span>`;
+    $("#immuneList").innerHTML = "";
+    immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
+
+  } else {
+    // Fases 3 y 4: juego individual (inmunidad doble)
+    const pool = getAlive();
+    immunes = shuffle(pool).slice(0, 2);
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Juego individual</span>`;
+    $("#immuneList").innerHTML = "";
+    immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
+  }
+
+  // Narrativa resumida
+  const bonjuSpeech = buildNarration(chosen, { winTeam });
+  $("#bonjuTxt").textContent = bonjuSpeech;
+
+  // ---------- Eventos del episodio ----------
+  evClear();
+  if (episode === 9) {
+    const retired = uniqueList(eliminated.slice());
+    renderEpisodeEvents(chosen, retired);
+  } else if (episode === 18) {
+    const evtTop4 = uniqueList(finalState.finalists.concat(finalState.eliminated));
+    renderEpisodeEvents(chosen, evtTop4);
+  } else {
+    renderEpisodeEvents(chosen);
+  }
+
+  // Preparar chalecos (menos en comeback y final)
+  if (episode !== 9 && episode !== 18) {
+    prepareVests(phase, winTeam);
+  }
+
+  // Mostrar caja de ganadores
+  $("#winnersBox").classList.remove("hide");
+
+  // Marcar uso del reto y refrescar disponibilidad
+  if (chosen) {
+    incUsed(chosen);
+
+    // Opcional: deshabilitar visualmente "Show de Talentos" para futuros episodios
+    if (chosen === "Show de Talentos") {
+      const opt = Array.from(challengeSelect.options)
+        .find(o => o.textContent.trim() === "Show de Talentos");
+      if (opt) opt.disabled = true;
+    }
+  }
+  updateChallengeAvailability();
+
+  // Bloquear reto para este episodio y deshabilitar botón
+  challengeLockedEp = episode;
+  runChallenge.disabled = true;
+});
+
+/* ====== Paso 4: Chalecos ====== */
+function playerChipClickable(name, opts={}){
+  const locked = !!opts.locked;
+  const mode = opts.mode || "nominate";
+
+  const wrap=document.createElement("div"); wrap.className="slot";
+
+  const badgeNom=document.createElement("div"); badgeNom.className="badge-nom";
+  const __isFinalistsStage = (typeof episode!=="undefined" && episode===18 && typeof finalState!=="undefined" && finalState && finalState.stage===1);
+  badgeNom.textContent = __isFinalistsStage ? "FINALISTA" : ("NOMINAD" + genderSuffix(name));
+  if(__isFinalistsStage){ badgeNom.style.color = "#d4af37"; }
+
+  const badgeSave=document.createElement("div"); badgeSave.className="badge-save"; badgeSave.textContent="SALVAD" + genderSuffix(name);
+
+  const ic=document.createElement("div"); ic.className="icon";
+  const img=document.createElement("img"); ic.appendChild(img); loadImg(img,imgFor(name),name);
+
+  const nm=document.createElement("div"); nm.className="name"; nm.textContent=name;
+
+  wrap.appendChild(badgeNom); wrap.appendChild(badgeSave); wrap.appendChild(ic); wrap.appendChild(nm);
+
+  if(locked){
+    // Bloqueado (auto‐nombrado o auto‐salvado) → no editable
+    badgeNom.style.display = (mode==="nominate") ? "inline-block" : "none";
+    wrap.style.outline = (mode==="nominate") ? "3px solid #e43d3d" : "";
+    wrap.style.cursor = "not-allowed";
+  } else {
+    wrap.addEventListener("click", ()=>{
+if (vestsCurrentPhaseId === 3 && mode !== "save1") {
+  if (keysNomineesLocked || keysGamePlayed) {
+    toast("En Fase 3, tras elegir los 4 nominados ya no se pueden cambiar.");
+    return;
+  }
+}
+      if(mode==="save1"){
+        if(savedPick===name){
+          savedPick=null; wrap.style.outline=""; badgeSave.style.display="none";
+        }else{
+          savedPick=name;
+          $$("#vestsGrid .slot").forEach(el=>{
+            el.style.outline="";
+            const b=el.querySelector(".badge-save"); if(b) b.style.display="none";
+          });
+          wrap.style.outline="3px solid #15803d"; badgeSave.style.display="inline-block";
+        }
+      }else{
+        const idx=nominees.indexOf(name);
+        if(idx>=0){
+          nominees.splice(idx,1); wrap.style.outline=""; badgeNom.style.display="none";
+        } else {
+          if(nominees.length>=requiredVestsCount){
+            toast(`Ya seleccionaste ${requiredVestsCount}. Quita uno para cambiar.`);
+            return;
+          }
+          nominees.push(name); wrap.style.outline="3px solid #e43d3d"; badgeNom.style.display="inline-block";
+        }
+      }
+if (typeof updateKeysButtons==="function") {
+  updateKeysButtons();
+} else {
+  $("#confirmVests").disabled = (vestsMode==="save1") ? !savedPick : (nominees.length !== requiredVestsCount);
+}
+updateVestsHelp(); renderNominees();
+
+    if (typeof setPhase3LockState === "function") setPhase3LockState();
+    });
+  }
+  return wrap;
+}
+
+let requiredVestsCount = 4;
+function updateVestsHelp(){
+  const help=$("#vestsHelp");
+  if(vestsMode==="save1"){
+    help.textContent = `Elige 1 SALVADO — los otros serán nominados (${savedPick? "seleccionado: "+savedPick : "ninguno"})`;
+  }else{
+    help.textContent = `Selecciona ${requiredVestsCount} chaleco(s) — llevas ${nominees.length}/${requiredVestsCount}`;
+  }
+}
+function getAlive(){ return diffAlive(activePlayers, eliminated); }
+
+
+if (typeof vestsCurrentPhaseId === "undefined") window.vestsCurrentPhaseId = 0;
+if (typeof keysGamePlayed      === "undefined") window.keysGamePlayed      = false;
+if (typeof keysWinners         === "undefined") window.keysWinners         = [];
+if (!window.KEYS_COLORS) window.KEYS_COLORS = ["Dorada","Negra","Blanca","Rosada","Verde","Azul"];
+
+function ensureKeysButton(){
+  const btn = $("#runKeysGame");
+  if (!btn) return;
+
+  btn.onclick = (typeof runKeysGame === "function") ? runKeysGame : startKeysFlow;
+
+  btn.style.display = (vestsCurrentPhaseId === 3) ? "inline-flex" : "none";
+}
+
+function updateKeysButtons(){
+  const inP3    = (vestsCurrentPhaseId === 3);
+  const play    = $("#runKeysGame");
+  const confirm = $("#confirmVests");
+
+  if (inP3){
+
+    if (play)    play.disabled    = !(nominees.length === 4 && !keysGamePlayed);
+    // Confirmar solo después de jugar Llaves y con al menos 1 nominado restante
+    if (confirm) confirm.disabled = !(keysGamePlayed && nominees.length > 0);
+  } else {
+
+    const ok = (vestsMode === "save1") ? !!savedPick : (nominees.length === requiredVestsCount);
+    if (confirm) confirm.disabled = !ok;
+    if (play){ play.style.display = "none"; play.disabled = true; }
+  }
+}
+
+
+function startKeysFlow(){
+  if(!(vestsCurrentPhaseId===3 && nominees.length===4)){
+    toast("Primero elige los 4 nominados.");
+    return;
+  }
+  keysWinners = shuffle(KEYS_COLORS.slice()).slice(0,2);
+  const picks = nominees.map(n => ({ name:n, color: KEYS_COLORS[Math.floor(Math.random()*KEYS_COLORS.length)] }));
+
+  const saved = picks.filter(p => keysWinners.includes(p.color)).map(p => p.name);
+  removeEvery(nominees, ...saved);
+  nominees = nominees.slice();
+
+  renderKeysBox(picks, saved);
+
+  keysGamePlayed = true;
+  if (typeof setPhase3LockState === "function") setPhase3LockState();
+  applyVestsUI?.();
+  updateKeysButtons();
+  renderNominees();
+}
+
+function renderKeysBox(picks){
+  const box = $("#keysGameBox");
+  if(!box) return;
+
+
+  const wrap = document.createElement("div");
+  wrap.className = "glass";
+  wrap.style.cssText = "margin-top:10px;padding:10px;border-radius:12px";
+
+  const h1 = document.createElement("h4"); h1.className="note"; h1.textContent="Elección de Llaves";
+  const desc = document.createElement("div"); desc.className="small";
+  desc.style.margin = "6px 0";
+  desc.textContent = "Cada uno de los nominados tiene la oportunidad de elegir una de las 6 llaves en frente suyo. Si alguna de esas llaves abre el cofre de Salvación, esa persona se salvará de ir al duelo de eliminación.";
+
+  const picksRow = document.createElement("div"); picksRow.className = "chips"; picksRow.style.margin = "6px 0";
+  picks.forEach(p=>{
+    picksRow.appendChild(chip(p.name, `${p.name} — Eligió la Llave ${p.color}`));
+  });
+
+
+  const h2 = document.createElement("h4"); h2.className="note"; h2.style.marginTop="10px";
+  h2.textContent = "Resultados del Juego de Llaves";
+
+  const resRow = document.createElement("div"); resRow.className = "chips";
+  picks.forEach(p=>{
+    const ok = keysWinners.includes(p.color);
+    const txt = ok
+      ? "Eligió una llave correcta y no irá al Duelo de Eliminación."
+      : "Eligió una llave incorrecta y no abrió el Cofre de Salvación.";
+    const el = chip(p.name, `${p.name} — ${txt}`);
+    el.classList.add(ok ? "safe" : "lose");
+    resRow.appendChild(el);
+  });
+
+  const footer = document.createElement("div");
+  footer.className = "help";
+  footer.style.marginTop = "6px";
+  footer.innerHTML = `Llaves correctas: <b>${keysWinners.join(" y ")}</b>`;
+
+  wrap.appendChild(h1); wrap.appendChild(desc); wrap.appendChild(picksRow);
+  wrap.appendChild(h2); wrap.appendChild(resRow); wrap.appendChild(footer);
+
+  box.innerHTML = "";
+  box.appendChild(wrap);
+  box.classList.remove("hide");
+}
+
+
+
+if (typeof perfScore !== "function"){
+  function __hashStr(s){
+    let h = 2166136261 >>> 0;
+    const str = String(s||"");
+    for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); h >>>= 0; }
+    return h >>> 0;
+  }
+  function perfScore(name, ctx){
+    const typ = (typeof challengeSelect!=="undefined" && challengeSelect ? (challengeSelect.value||"") : "");
+    const seed = `${name}|ep:${episode}|type:${typ}|${ctx||""}`;
+    const h = __hashStr(seed);
+    return (h % 1000) / 1000; // 0..0.999 (menor = "peor")
+  }
+  function rankByPerformance(list, ctx){
+    return list.slice().map(n=>({n, s: perfScore(n, ctx)}))
+      .sort((a,b)=> a.s - b.s) // peor primero
+      .map(o=>o.n);
+  }
+}
+
+function prepareVests(phase, winTeam){
+  nominees = []; savedPick = null; vestsMode = "nominate";
+  const grid=$("#vestsGrid"); grid.innerHTML="";
+  $("#vestsTitle").textContent = "Asigna chalecos";
+
+
+  vestsCurrentPhaseId = phase?.id || 0;
+  keysGamePlayed = false;
+  keysWinners = [];
+  $("#keysGameBox")?.classList.add("hide");
+  ensureKeysButton();
+  updateKeysButtons();
+
+  setPhase3LockState();
+
+  const alive = getAlive().filter(n=>!immunes.includes(n));
+  let pool = alive.slice();
+
+  // FINAL — PARTE 2: solo finalistas
+  if(episode===18 && finalState?.stage===1){
+    requiredVestsCount = 2;
+    $("#vestsTitle").textContent = `Final: Ambos finalistas pasan al Duelo Final`;
+    finalState.finalists.forEach(n=> grid.appendChild(playerChipClickable(n, {locked:true, mode:'nominate'})));
+    nominees = finalState.finalists.slice(0,2);
+    $("#confirmVests").disabled = (nominees.length !== requiredVestsCount);
+    updateVestsHelp(); return;
+  }
+
+  /* ====== FASE 1 ====== */
+  if(phase.id===1){
+    const loseTeams = selectedTeams.filter(t=>t!==winTeam);
+    const poolP1 = uniqueList(loseTeams.flatMap(t => (distribution3[t]||[]))).filter(n=> alive.includes(n));
+
+    // EPISODIO 4: 4 por rendimiento (auto, ninguno editable)
+    if (episode === 4){
+      requiredVestsCount = 4;
+      const auto = rankByPerformance(poolP1, 'p1_ep4').slice(0,4);
+      nominees = auto.slice();
+
+      grid.innerHTML = "";
+      const groups = loseTeams.map(t=>({team:t, list:(distribution3[t]||[]).filter(n=> auto.includes(n))}));
+      groups.forEach(g=>{
+        const sec=document.createElement("div"); sec.className="vests-group";
+        const tt=document.createElement("div"); tt.className="vests-title"; tt.textContent=g.team; sec.appendChild(tt);
+        const row=document.createElement("div"); row.style.display="grid"; row.style.gridTemplateColumns="repeat(auto-fit, minmax(130px,1fr))"; row.style.gap="14px";
+        g.list.forEach(n=> row.appendChild(playerChipClickable(n, {locked:true, mode:'nominate'})));
+        sec.appendChild(row); grid.appendChild(sec);
+      });
+
+      $("#vestsTitle").textContent = `Fase 1: — Antes de avanzar a la segunda fase del juego, los 4 con el rendimiento más bajo iran al Duelo de Eliminación en este episodio`;
+      $("#confirmVests").disabled = false;
+      updateVestsHelp(); return;
+    }
+
+    // Resto de episodios: 1 por rendimiento (bloqueado) + eliges 3 (total 4)
+    requiredVestsCount = 4;
+    const auto1 = rankByPerformance(poolP1, 'p1').slice(0,1);
+    nominees = auto1.slice();
+
+    grid.innerHTML = "";
+    const groups = loseTeams.map(t=>({team:t, list:(distribution3[t]||[]).filter(n=> poolP1.includes(n))}));
+    groups.forEach(g=>{
+      const sec=document.createElement("div"); sec.className="vests-group";
+      const tt=document.createElement("div"); tt.className="vests-title"; tt.textContent=g.team; sec.appendChild(tt);
+      const row=document.createElement("div"); row.style.display="grid"; row.style.gridTemplateColumns="repeat(auto-fit, minmax(130px,1fr))"; row.style.gap="14px";
+      g.list.forEach(n=> row.appendChild(playerChipClickable(n, {locked:auto1.includes(n), mode:'nominate'})));
+      sec.appendChild(row); grid.appendChild(sec);
+    });
+
+    $("#vestsTitle").textContent = `Fase 1: Asigna 3 chalecos de sentencia (el nominado por rendimiento no se puede cambiar) — entre ${loseTeams.join(" y ")}`;
+  }
+
+/* ====== FASE 2 ====== */
+else if(phase.id===2){
+
+  requiredVestsCount = 3;
+  const t2 = Object.keys(distribution2);
+  const losing = pick(t2.filter(t=>t!==winTeam));
+  const alive = getAlive().filter(n=>!immunes.includes(n));
+  const poolP2 = (distribution2[losing]||[]).filter(n=> alive.includes(n));
+
+  // 🎯 EPISODIO 8 — NOMINAR A TODO EL EQUIPO PERDEDOR (y bloquear)
+  if (episode === 8){
+    requiredVestsCount = poolP2.length;
+    nominees = poolP2.slice();
+
+    $("#vestsTitle").textContent = `Fase 2: — Todos los miembros del equipo ${losing} irán al Duelo de Eliminación por perder el último desafío grupal`;
+    // pintar todos los del equipo perdedor como bloqueados
+    const randBtn = document.getElementById("randomVests");
+    if (randBtn) randBtn.disabled = true; // no permitir random
+
+    poolP2.forEach(n => grid.appendChild(playerChipClickable(n, {locked:true, mode:"nominate"})));
+
+
+    $("#confirmVests").disabled = false;
+    updateVestsHelp();
+    return; // ← salimos porque EP8 ya quedó resuelto
+  }
+
+
+  const auto1 = rankByPerformance(poolP2, 'p2').slice(0,1);
+  nominees = auto1.slice();
+  $("#vestsTitle").textContent = `Fase 2: Asigna 2 chaleco de sentencia (el nominado por rendimiento no se puede cambiar) — equipo ${losing}`;
+  poolP2.forEach(n=> grid.appendChild(playerChipClickable(n, {locked:auto1.includes(n), mode:"nominate"})));
+}
+
+  /* ====== FASE 3 ====== */
+  else if(phase.id===3){
+    // 2 nominados por ganadores (bloqueados) + eliges 2 (total 4)
+    requiredVestsCount = 4;
+
+    // Pool = vivos que NO son inmunes/ganadores
+    const poolP3 = getAlive().filter(n => !immunes.includes(n));
+
+    // Elegidos por ganadores (si hubiese <2 inmunes, rellenamos con rendimiento)
+    let auto = [];
+    const avail = poolP3.slice();
+    (immunes||[]).slice(0,2).forEach(w=>{
+      const ranked = avail.slice().sort((a,b)=> perfScore(a, `pick_by_${w}`) - perfScore(b, `pick_by_${w}`));
+      const pick = ranked[0];
+      if(pick){
+        auto.push(pick);
+        const i = avail.indexOf(pick); if(i>=0) avail.splice(i,1);
+      }
+    });
+    while(auto.length<2 && avail.length){
+      auto.push(avail.shift()); // fallback si faltan inmunes
+    }
+    auto = uniqueList(auto).slice(0,2);
+    nominees = auto.slice();
+
+    $("#vestsTitle").textContent = `Fase 3: 2 participantes han sido nominados por los ganadores, elige 2 más`;
+    poolP3.forEach(n=> grid.appendChild(playerChipClickable(n, {locked:auto.includes(n), mode:"nominate"})));
+
+  ensureKeysButton();
+  updateKeysButtons();
+  setPhase3LockState();
+  }
+
+  /* ====== FASE 4A: salvar 1 ====== */
+  else if(phase.id===4 && phase.sub==='A'){
+    // EP 14: Salvar 1, el resto nominado
+    vestsMode = "save1";
+    requiredVestsCount = 1;
+    $("#vestsTitle").textContent = `Fase 4: Elige 1 participante para salvar; el resto queda NOMINADO`;
+    pool.forEach(n=> grid.appendChild(playerChipClickable(n, {mode:'save1'})));
+  }
+
+/* ====== FASE 4B ====== */
+else if (phase.id === 4 && phase.sub === 'B') {
+  const grid = $("#vestsGrid");
+  const alive = getAlive().filter(n => !immunes.includes(n));
+  const pool = alive.slice();
+
+  // EPISODIO 17: TODOS LOS HABILITADOS SON NOMINADOS (bloqueados, sin random)
+  if (episode === 17) {
+    requiredVestsCount = pool.length;
+    nominees = pool.slice();
+
+    $("#vestsTitle").textContent = `Fase 4: — Los que no ganaron el Desafío de Inmunidad, deberán ir al último Duelo de Eliminación`;
+
+    const randBtn = $("#randomVests");
+    if (randBtn) randBtn.disabled = true;
+
+    pool.forEach(n => grid.appendChild(playerChipClickable(n, { locked: true, mode: "nominate" })));
+
+    $("#confirmVests").disabled = false;
+    updateVestsHelp();
+    return; // ← Ep17 resuelto aquí
+  }
+
+  // Resto de episodios (comportamiento normal 4B)
+  requiredVestsCount = 2;
+  $("#vestsTitle").textContent = `Fase 4: 1 Participante fue nominado por los ganadores, elige 1 más`;
+  const auto = rankByPerformance(pool, 'p4b').slice(0,1)[0] || pick(pool);
+  nominees = [auto];
+  pool.forEach(n => grid.appendChild(playerChipClickable(n, { locked: n === auto, mode: "nominate" })));
+}
+  $("#confirmVests").disabled = (nominees.length !== requiredVestsCount);
+  updateVestsHelp();
+  return;
+}
+
+// ——— Orden estable del TR: 20 filas; PURG al final ———
+function getRosterOrder(){
+  let base = (Array.isArray(window.roster20) && window.roster20.length === 20)
+    ? window.roster20.slice()
+    : (activePlayers || []).concat(eliminated || []);
+  if (window._seasonPurgados && window._seasonPurgados.size){
+    const purg = base.filter(n => window._seasonPurgados.has(norm(n)));
+    const rest = base.filter(n => !window._seasonPurgados.has(norm(n)));
+    base = rest.concat(purg); // PURG siempre al final → pos 19 y 20
+  }
+  return base;
+}
+
+
+// ====== RANDOM CHALECOS (botón) ======
+function applyVestsUI(){
+  const slots = Array.from(document.querySelectorAll("#vestsGrid .slot"));
+  const mode = vestsMode;
+
+  slots.forEach(slot => {
+    const name = slot.querySelector(".name")?.textContent?.trim();
+    const badgeNom = slot.querySelector(".badge-nom");
+    const badgeSave = slot.querySelector(".badge-save");
+    const isLocked = slot.style.cursor === "not-allowed"; // chips bloqueados (auto)
+
+    if (mode === "save1") {
+      if (!isLocked) {
+        // limpiar visual
+        if (badgeNom) badgeNom.style.display = "none";
+        slot.style.outline = "";
+      }
+      // marcar seleccionado
+      if (savedPick && name === savedPick) {
+        if (badgeSave) badgeSave.style.display = "inline-block";
+        slot.style.outline = "3px solid #15803d";
+      } else {
+        if (badgeSave && !isLocked) badgeSave.style.display = "none";
+      }
+    } else {
+      // modo nominate
+      if (isLocked) return; // no tocar los auto-nominados
+      const isNom = nominees.includes(name);
+      if (badgeSave) badgeSave.style.display = "none";
+      if (badgeNom) badgeNom.style.display = isNom ? "inline-block" : "none";
+      slot.style.outline = isNom ? "3px solid #e43d3d" : "";
+    }
+  });
+
+  // habilitar/inhabilitar botón confirmar
+if (typeof updateKeysButtons==="function") {
+  updateKeysButtons();
+} else {
+  const ok = (vestsMode === "save1") ? !!savedPick : (nominees.length === requiredVestsCount);
+  document.getElementById("confirmVests").disabled = !ok;
+}
+updateVestsHelp();
+
+}
+
+// Click del botón Random (debes tener el botón en el HTML de stage-4)
+document.getElementById("randomVests")?.addEventListener("click", () => {
+  const alive = getAlive().filter(n => !immunes.includes(n));
+
+  if (vestsMode === "save1") {
+    // Elegir 1 salvado aleatorio; los demás quedarán nominados al confirmar
+    if (!alive.length) return;
+    const pickIdx = Math.floor(Math.random() * alive.length);
+    savedPick = alive[pickIdx];
+    applyVestsUI();
+    toast(`Salvado al azar: ${savedPick}`);
+    return;
+  }
+
+  // modo nominate: respetar los bloqueados (ya están en nominees)
+  // base = los que ya estén nominados y bloqueados
+  const slots = Array.from(document.querySelectorAll("#vestsGrid .slot"));
+  const lockedNow = new Set(
+    slots.filter(s => s.style.cursor === "not-allowed")
+         .map(s => s.querySelector(".name")?.textContent?.trim())
+         .filter(Boolean)
+  );
+
+  // mantener bloqueados dentro de nominees
+  let base = nominees.filter(n => lockedNow.has(n));
+
+  // construir pool sin inmunes ni ya en base
+  const pool = alive.filter(n => !base.includes(n));
+
+  // cuántos faltan para llegar a requiredVestsCount
+  const need = Math.max(0, requiredVestsCount - base.length);
+
+  // muestreo simple sin reemplazo
+  const poolCopy = pool.slice();
+  const chosen = [];
+  for (let i = 0; i < need && poolCopy.length; i++) {
+    const idx = Math.floor(Math.random() * poolCopy.length);
+    chosen.push(poolCopy.splice(idx,1)[0]);
+  }
+
+  nominees = base.concat(chosen);
+  applyVestsUI();
+  toast(`Nominados al azar: ${nominees.join(" • ")}`);
+});
+
+/* Navegación a pantalla de chalecos */
+$("#goVests").addEventListener("click", ()=>{
+  if(episode===9){
+    comebackSpecial(predefinedComebackWinners); comebackApplied = true; buildTRTable(); go(6);
+  } else if(episode===18){
+    // pasar a Parte 2 (chalecos finales)
+    finalState.stage = 1;
+    go(4);
+    prepareVests({id:0}, null);
+  } else {
+    go(4);
+  }
+});
+
+/* ====== Confirmación de chalecos ====== */
+$("#confirmVests").addEventListener("click", () => {
+  // Final EP18 · Parte 2
+  if (episode === 18 && finalState?.stage === 1) {
+    if (nominees.length !== 2) { toast("Selecciona ambos finalistas para el duelo."); return; }
+    go(5); renderNominees(); return;
+  }
+
+
+  const phNow = currentPhase(episode);
+  if (phNow.id === 3 && !keysGamePlayed) {
+    toast("Primero realiza el Juego de Llaves.");
+    return;
+  }
+
+
+  if (vestsMode === "save1") {
+    if (!savedPick) { toast("Elige 1 salvado."); return; }
+    const pool = getAlive().filter(n => !immunes.includes(n));
+    nominees = pool.filter(n => n !== savedPick);
+  } else {
+
+    if (!(phNow.id === 3 && keysGamePlayed)) {
+      if (nominees.length !== requiredVestsCount) {
+        toast("Selecciona los chalecos requeridos.");
+        return;
+      }
+    }
+  }
+
+
+  if (nominees.length === 0) { toast("No hay nadie nominado tras el juego de llaves."); return; }
+  go(5);
+  renderNominees();
+});
+
+
+
+/* ====== Paso 5: Duelo ====== */
+function chip(name,label){
+  const el=document.createElement("span"); el.className="pill";
+  const img=document.createElement("img"); img.className="av-mini"; loadImg(img,imgFor(name),name);
+  el.appendChild(img); el.appendChild(document.createTextNode(label||name));
+  return el;
+}
+function renderNominees(){
+  const box=$("#duelNominees"); if(!box) return;
+  box.innerHTML="";
+  nominees.forEach(n=> box.appendChild(chip(n,n)));
+}
+$("#seeResults").addEventListener("click", ()=>{
+  if(resultsLockedEp===episode){ toast("Resultados ya generados."); return; }
+  if(nominees.length===0){ toast("No hay nominados."); return; }
+  if (typeof window._seasonSpecialEventUsed === "undefined") window._seasonSpecialEventUsed = false;
+  if (resultsLockedEp === episode) return;
+
+  const revealOneByOne = (ranking, finalMode=false)=>{
+    const box = $("#duelRanking");
+    box.innerHTML = "";
+    const lastIdx = ranking.length - 1;
+
+    ranking.forEach((n, i)=>{
+      const isLast = i === lastIdx;
+      const label  = finalMode ? `${i+1}. ${n}` : (isLast ? `${i+1}. ${n}` : `${i+1}. SAFE — ${n}`);
+      const el = chip(n, label);
+      if (isLast) { el.classList.add("lose"); } else if (!finalMode) { el.classList.add("safe"); }
+      el.classList.add("reveal");
+      el.style.animationDelay = (i * 220) + "ms";
+      setTimeout(()=> $("#duelRanking").appendChild(el), i * 120);
+    });
+
+    const panel = $("#duelResults");
+    panel.classList.remove("hide");
+    panel.classList.add("reveal-panel");
+  };
+
+  // FINAL: no aplican eventos especiales (fase 4)
+  if (episode === 18 && finalState.stage === 1){
+    const ranking = shuffle(nominees.slice());
+    const eliminatedNow = ranking[ranking.length-1];
+    const winner = ranking.find(n=>n!==eliminatedNow);
+    finalState.winner = winner; finalState.runner = eliminatedNow;
+
+    const rw = trackData.find(r=>norm(r.name)===norm(winner));
+    const rr = trackData.find(r=>norm(r.name)===norm(eliminatedNow));
+    if (rw) rw.final = {cls:'champ', txt:'Winner'};
+    if (rr) rr.final = {cls:'run',   txt:'Runner Up'};
+
+    activePlayers = [winner, eliminatedNow];
+    revealOneByOne(ranking, /*finalMode*/ true);
+    resultsLockedEp = episode;
+    return;
+  }
+
+  // ===== Evento especial (90%) por fase — SOLO 1 VEZ POR TEMPORADA =====
+  const phase = currentPhase(episode); // 1..4
+  const canUseSeasonEvent = (window._seasonSpecialEventUsed === false); 
+  const roll = canUseSeasonEvent && (Math.random() < 0.15); 
+
+  // Eventos permitidos por fase
+  const allowed = [];
+  if (phase.id === 1) { allowed.push("QUIT", "EVAC"); }
+  if (phase.id === 2) { allowed.push("QUIT", "DISQ", "EVAC"); }
+  if (phase.id === 3) { allowed.push("DISQ"); }
+  // fase 4 => ninguno
+
+  if (roll && allowed.length){
+    let type = pick(allowed);
+
+    // Objetivo (cualquiera vivo)
+  const alive = getAlive();
+  let who;
+  if (type === "QUIT") {
+    const cat2 = alive.find(isCatalina);
+    who = cat2 ? cat2 : pick(alive);
+  } else {
+    who = pick(alive);
+  }
+
+
+    const eliminatedNow = who;
+
+    applyEpisodeResults(phase, eliminatedNow);
+
+    setTR(eliminatedNow, episode, type);
+
+    // Texto visible (no decir ELIMINADO/A)
+    const labelByType = {
+      QUIT: "RENUNCIA",
+      DISQ: "DESCALIFICADO/A",
+      EVAC: "LESIONADO/A"
+    };
+
+
+    const box = $("#duelRanking");
+    box.innerHTML = "";
+    const chipEl = chip(eliminatedNow, `${labelByType[type]} — ${eliminatedNow}`);
+    chipEl.classList.add("lose");
+    if (type === "DISQ") chipEl.style.borderColor = "rgba(255,255,255,0.15)";
+    if (type === "EVAC") chipEl.style.filter = "brightness(1.05)";
+    box.appendChild(chipEl);
+
+    const panel = $("#duelResults");
+    panel.classList.remove("hide");
+    panel.classList.add("reveal-panel");
+
+
+    resultsLockedEp = episode;
+    window._seasonSpecialEventUsed = true;
+
+    return; 
+  }
+
+  // ===== Duelo normal (sin evento especial) =====
+  const ranking = shuffle(nominees.slice());
+  const eliminatedNow = ranking[ranking.length-1];
+  applyEpisodeResults(phase, eliminatedNow);
+  revealOneByOne(ranking, /*finalMode*/ false);
+  resultsLockedEp = episode;
+});
+
+$("#toTrack").addEventListener("click", ()=> go(6));
+
+
+/* ====== Paso 6: Track ====== */
+function buildTRTable(){
+  $("#trTitle").textContent = `Track Record — Episodio ${episode}`;
+  const head=$("#trkHead"), body=$("#trkBody");
+  head.innerHTML=""; body.innerHTML="";
+
+  // ---- encabezado ----
+  const trh = document.createElement("tr");
+  let th = document.createElement("th"); th.textContent = "Pos"; trh.appendChild(th);
+  th = document.createElement("th"); th.textContent = "Participante"; trh.appendChild(th);
+  for (let i=1;i<=Math.min(episode,17);i++){ const th=document.createElement("th"); th.textContent=String(i); trh.appendChild(th); }
+  if (episode >= 18){ const th=document.createElement("th"); th.textContent="Final"; th.className="final"; trh.appendChild(th); }
+  head.appendChild(trh);
+
+  // ---- ORDEN BASE: siempre los 20; PURG al final gracias a getRosterOrder()
+  const order = getRosterOrder();
+  const TOTAL = order.length || 18;
+
+  // ---- mapa de posiciones (1..TOTAL)
+  const posMap = Object.create(null);
+
+  // Final winner/runner
+  if (episode >= 18 && finalState?.winner && finalState?.runner){
+    posMap[norm(finalState.winner)] = 1;
+    posMap[norm(finalState.runner)] = 2;
+  }
+
+  // PURG ocupan TOTAL y TOTAL-1 (20 y 19)
+  const purg = order.filter(n => window._seasonPurgados?.has(norm(n)));
+  purg.forEach((n,i)=>{ posMap[norm(n)] = TOTAL - i; });
+
+  // Eliminados normales (sin PURG) desde abajo hacia arriba, detrás de PURG
+  const elimNonPurg = (eliminated||[]).filter(n => !window._seasonPurgados?.has(norm(n)));
+  elimNonPurg.forEach((n,idx)=>{
+    const k = norm(n);
+    if (posMap[k] == null) posMap[k] = TOTAL - purg.length - idx;
+  });
+
+// Ordenar por posición: vacíos primero, luego 1..TOTAL (20 queda al final)
+const orderSorted = order.slice().sort((a,b)=>{
+  const pa = posMap[norm(a)] ?? 0;
+  const pb = posMap[norm(b)] ?? 0;
+  if (!pa && !pb) return 0;   // ambos sin posición todavía
+  if (!pa) return -1;         // sin posición va arriba
+  if (!pb) return 1;
+  return pa - pb;             // 1..TOTAL (20 queda abajo)
+});
+
+  // ---- filas en el orden estable
+  orderSorted.forEach((name)=>{
+    const tr = document.createElement("tr");
+    const key = norm(name);
+
+    const tdPos = document.createElement("td");
+    tdPos.textContent = (posMap[key] != null) ? String(posMap[key]) : "";
+    tr.appendChild(tdPos);
+
+    const tdName = document.createElement("td"); tdName.textContent = name; tr.appendChild(tdName);
+
+    for (let e=1; e<=Math.min(episode,17); e++){
+      const td = document.createElement("td");
+      const rec = (trackData.find(r=>norm(r.name)===key)||{cells:[]}).cells[e-1] || TR.dead();
+      const span = document.createElement("span"); span.className = "cell " + rec.cls; span.textContent = rec.txt;
+      td.appendChild(span); tr.appendChild(td);
+    }
+    if (episode > 17){
+      const td = document.createElement("td"); td.className="final";
+      const fin = (trackData.find(r=>norm(r.name)===key)||{}).final;
+      const span = document.createElement("span"); span.className="cell " + (fin?.cls || 'dead'); span.textContent = fin?.txt || '—';
+      td.appendChild(span); tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  });
+
+  // fin de temporada bloquea avanzar
+  const next = $("#nextEpisode");
+  if (episode>=18 && finalState.winner) next.disabled = true;
+  $("#restartSim").style.display = episode>17 ? "inline-flex" : "none";
+}
+
+// Guardar Track Record como JPG
+function saveTableAsImage(){
+  const table = document.getElementById("trkTable");
+  if(!table) return;
+
+  const rect = table.getBoundingClientRect();
+  const w = Math.ceil(rect.width) + 16;
+  const h = Math.ceil(rect.height) + 16;
+  const dpr = Math.max(2, Math.floor((window.devicePixelRatio || 1) * 1.5));
+
+  const styles = `
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap">
+  <style>
+    :root{
+      --tr-win:#00bfff; --tr-wini:#4169E1; --tr-safe:#f8f9fa; --tr-duel:#ff6347; --tr-elim:#ff0000;
+      --tr-dead:#a9a9a9; --tr-dead-txt:#6b7280; --tr-high:#add8e6; --tr-low:#ffb6c1; --tr-in:#000080; --tr-out:#800080; --tr-stay:#d3ffb5;
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family:'Rubik', Poppins, Arial, sans-serif; }
+    table{ border-collapse:collapse; width:${Math.max(1, w-16)}px; table-layout:fixed; }
+    th,td{ border:1px solid #a9a9a9; padding:6px 8px; text-align:center; font-weight:800; font-size:13px; white-space:nowrap; }
+    th{ background:#fff7ee }
+
+    /* La celda pintada debe ocupar el 100% del td */
+    .cell{
+      display:block; width:100%; height:100%;
+      padding:6px 0; min-width:0; font-weight:800; border-radius:0; border:none;
+    }
+    .win{background:var(--tr-win);color:#00304c}
+    .wini{background:var(--tr-wini);color:#fff}
+    .safe{background:var(--tr-safe);color:#1f2937} /* <-- sin borde */
+    .duel{background:var(--tr-duel);color:#fff}
+    .elim{background:var(--tr-elim);color:#000}
+    .dead{background:var(--tr-dead);color:#6b7280}
+    .high{background:var(--tr-high);color:#111}
+    .low{background:var(--tr-low);color:#111}
+    .in{background:var(--tr-in);color:#fff}
+    .out{background:var(--tr-out);color:#fff}
+    .stay{background:var(--tr-stay);color:#111}
+    .champ{background:#ffd700;color:#000}
+    .run{background:#c0c0c0;color:#000}
+
+    /* Columnas */
+    #trkHead th:first-child, #trkBody td:first-child { width:40px; }
+    #trkHead th:nth-child(2), #trkBody td:nth-child(2) { width:160px; text-align:left; padding-left:10px; }
+
+    /* Episodios SIN padding para que el color llene todo el td */
+    #trkHead th:nth-child(n+3), #trkBody td:nth-child(n+3) { width:60px; padding:0; }
+  </style>`;
+
+  const wrapper = document.createElement("div");
+  wrapper.appendChild(table.cloneNode(true));
+
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <foreignObject width="100%" height="100%">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff;padding:8px;">
+        ${styles}
+        ${wrapper.innerHTML}
+      </div>
+    </foreignObject>
+  </svg>`;
+
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = function(){
+    const canvas = document.createElement("canvas");
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/jpeg", 0.98);
+    a.download = `track_record_ep${(typeof episode!=="undefined"?episode:"")}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+// Adjuntar listener de forma segura (fuera de la función)
+(function(){
+  var btn = document.getElementById("saveTR");
+  if (btn) btn.addEventListener("click", saveTableAsImage);
+})();
+
+
+/* ====== Next Episode flow (incluye Final) ====== */
+document.querySelector("#nextEpisode").addEventListener("click", ()=>{
+  activePlayers = diffAlive(uniqueList(activePlayers), eliminated);
+  eliminated   = uniqueList(eliminated);
+
+ if (episode === 4){
+  populateRedis2Captains(); 
+  go("redis2");
+  return;
+}
+  if(episode===9 && !comebackApplied){
+    comebackSpecial(predefinedComebackWinners);
+    buildTRTable();
+    go(6);
+    return;
+  }
+  if(episode===17){
+    // Ir a FINAL (ep 18) con pantallas normales
+    episode = 18; challengeLockedEp=0; resultsLockedEp=0; nominees=[]; immunes=[];
+    finalState = {stage:0, finalists:[], eliminated:[], winner:null, runner:null};
+    resetEpisodeUI(); go(3); updateChallengeAvailability(); return;
+  }
+  if(episode>=18){
+    // no permitir pasar de 18
+    toast("Fin de temporada (Ep.18)."); return;
+  }
+
+  episode += 1;
+  challengeLockedEp = 0; resultsLockedEp = 0; nominees=[]; immunes=[];
+  predefinedComebackWinners=null; comebackApplied=false;
+  resetEpisodeUI(); go(3); updateChallengeAvailability();
+});
+
+$("#restartSim").addEventListener("click", ()=>{ window.location.reload(); });
+  const opt = Array.from(document.querySelectorAll("#challengeSelect option")).find(o=>o.textContent==="Show de Talentos"); if(opt) opt.disabled = false;
+  evClear(); talentShowUsed=false; eventCount_BayronAndro=0; eventCount_FelixDani=0; eventCount_DiosDani=0; eventCount_DiosIsabel=0; eventCount_AlexandroIsabel=0; eventCount_CoronelDaelly=0; eventCount_EduardKimCamila=0; eventCount_AndromedaPeggy=0; eventCount_AlexandroCatalina=0; eventCount_GregLucasMendez=0; eventCount_IñaellaRoseDuaLingo=0;
+
+
+
+/* ====== Redistribución a 2 equipos (con Desafío de Capitanes) ====== */
+const teamBoard2 = $("#teamBoard2");
+
+/* --- Utilidades locales --- */
+function commitDistribution2(){
+  distribution2 = {};
+  $$("#stage-redis2 .team-row").forEach(r=>{
+    const team = r.querySelector(".team-title").textContent.trim();
+    const vals = $$("select", r).map(s=>s.value).filter(Boolean);
+    distribution2[team] = vals;
+  });
+}
+function resetBtn(id){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  const clone = el.cloneNode(true);
+  el.parentNode.replaceChild(clone, el);
+  return document.getElementById(id);
+}
+
+/* --- Modo manual clásico (por si lo quieres seguir usando) --- */
+function populateAdvOptions(){
+  const adv1 = $("#adv1"), adv2 = $("#adv2"), btn = $("#confirmAdv");
+  const opts = `<option value="">— Selecciona —</option>` + selectedTeams.map(t=>`<option>${t}</option>`).join("");
+  adv1.innerHTML = adv2.innerHTML = opts;
+  btn.disabled = true;
+  function check(){ btn.disabled = !(adv1.value && adv2.value && adv1.value !== adv2.value); }
+  adv1.onchange = check; adv2.onchange = check;
+
+  btn.onclick = ()=>{
+    if(btn.disabled){ toast("Elige dos equipos distintos."); return; }
+    advancingTeams = [adv1.value, adv2.value];
+    build2TeamsBoard(advancingTeams);
+  };
+}
+
+/* --- PANTALLA 1: Elegir capitanes por equipo --- */
+function populateRedis2Captains(){
+  const title = $("#teamsTitle2");
+  const adv1 = $("#adv1"), adv2 = $("#adv2");
+  if(title) title.textContent = "Desafío de Capitanes — Elige el/la capitán/a de cada equipo";
+  if(adv1) adv1.style.display = "none";
+  if(adv2) adv2.style.display = "none";
+  teamBoard2.innerHTML = "";
+
+  (selectedTeams || []).forEach(teamName=>{
+    const row = document.createElement("div"); row.className = "team-row";
+    const h = document.createElement("div"); h.className = "team-title"; h.textContent = teamName; row.appendChild(h);
+    const grid = document.createElement("div"); grid.className = "grid"; grid.style.gridTemplateColumns = "repeat(1,1fr)";
+
+    const slot = document.createElement("div"); slot.className = "slot"; slot.dataset.team = teamName;
+    const icon = document.createElement("div"); icon.className = "icon";
+    const img  = document.createElement("img"); icon.appendChild(img); icon.appendChild(makeInitials("?"));
+    const nm   = document.createElement("div"); nm.className = "name"; nm.textContent = "Capitán/a";
+    const sel  = document.createElement("select");
+
+    const aliveTeam = (distribution3[teamName] || []).filter(n => getAlive().includes(n));
+    sel.innerHTML = `<option value="">— Selecciona capitán/a —</option>` + aliveTeam.map(n=>`<option>${n}</option>`).join("");
+
+    sel.addEventListener("change", ()=>{
+      const v = sel.value; nm.textContent = v || "Capitán/a";
+      const pic = icon.querySelector("img");
+      if(v){ loadImg(pic, imgFor(v), v); }
+      else {
+        const newImg = document.createElement("img"); pic.replaceWith(newImg);
+        icon.querySelector(".placeholder")?.remove(); icon.appendChild(makeInitials("?"));
+      }
+      // Badge CAPITÁN (amarillo)
+      let badge = slot.querySelector(".badge-capt");
+      if(!badge){
+        badge = document.createElement("div");
+        badge.className = "badge-nom badge-capt";
+        badge.style.color = "#facc15";
+        slot.prepend(badge);
+      }
+      badge.textContent = v ? "CAPITÁN" : "";
+    });
+
+    slot.appendChild(icon); slot.appendChild(nm); slot.appendChild(sel);
+    grid.appendChild(slot); row.appendChild(grid); teamBoard2.appendChild(row);
+  });
+
+  // Botones de la pantalla
+  const btnAdv   = resetBtn("confirmAdv");   if(btnAdv)   btnAdv.style.display = "none";
+  const btnRandCaps = resetBtn("fillRandom2");
+  if (btnRandCaps){
+    btnRandCaps.style.display = "inline-flex";
+    btnRandCaps.textContent = "Random Capitanes";
+    btnRandCaps.onclick = ()=>{
+      // Un capitán aleatorio por equipo (entre los vivos de ese equipo)
+      $$("#stage-redis2 .team-row").forEach(row=>{
+        const team = row.querySelector(".team-title")?.textContent?.trim();
+        const sel  = row.querySelector("select");
+        const aliveTeam = (distribution3[team] || []).filter(n => getAlive().includes(n));
+        if (sel && aliveTeam.length){
+          sel.value = aliveTeam[Math.floor(Math.random()*aliveTeam.length)];
+          sel.dispatchEvent(new Event("change"));
+        }
+      });
+    };
+  }
+  const btnGo    = resetBtn("confirmTeams2");
+  if(btnGo){
+    btnGo.style.display = "inline-flex";
+    btnGo.disabled = false;
+    btnGo.textContent = "Ir a Desafío de Capitanes →";
+    btnGo.onclick = ()=>{
+      const picks = Array.from(document.querySelectorAll("#stage-redis2 .team-row")).map(r=>{
+        const team = r.querySelector(".team-title").textContent.trim();
+        const sel  = r.querySelector("select");
+        return { team, captain: sel.value };
+      });
+      if(picks.some(p=>!p.captain)){ toast("Elige el/la capitán/a de cada equipo."); return; }
+      startCaptainDuel(picks);
+    };
+  }
+}
+
+/* --- PANTALLA 2: Duelo de capitanes (elige 2 equipos que avanzan) --- */
+function startCaptainDuel(picks){
+  // Ranking simple (si quieres, cambia por tu métrica real)
+  const ranking = shuffle(picks.slice());
+  const winners = ranking.slice(0,2);
+
+  // Mostrar ranking
+  const info = document.createElement("div"); info.className = "ev-row";
+  info.appendChild(document.createTextNode("Resultado — Desafío de Capitanes: "));
+  ranking.forEach((p,i)=> info.appendChild(chip(p.captain, `${i+1}. ${p.team}`)));
+  teamBoard2.prepend(info);
+
+  const note = document.createElement("div"); note.className = "ev-row";
+  const t = document.createElement("span"); t.className = "muted";
+  t.textContent = "Bonju: Avanzan dos equipos. Los capitanes ganadores arman equipos desde cero (dos equipos de 7).";
+  note.appendChild(t); teamBoard2.prepend(note);
+
+  window.advancingTeams = winners.map(w=>w.team);
+  startAutoDraft(winners);
+}
+
+/* --- PANTALLA 3: Auto-draft 7 vs 7 (capitanes fijos en slot 0) --- */
+function startAutoDraft(winners){
+  const title = $("#teamsTitle2");
+  const btnAuto    = resetBtn("fillRandom2");
+  const btnConfirm = resetBtn("confirmTeams2");
+  const btnAdv     = resetBtn("confirmAdv");
+  if(btnAdv) btnAdv.style.display = "none";
+
+  if(title && window.advancingTeams && window.advancingTeams.length===2){
+    title.textContent = `Armar equipos — ${window.advancingTeams[0]} y ${window.advancingTeams[1]} (7 y 7)`;
+  }
+  if(btnAuto){    btnAuto.style.display = "inline-flex"; btnAuto.textContent = "Iniciar selección automática"; }
+  if(btnConfirm){ btnConfirm.style.display = "inline-flex"; btnConfirm.textContent = "Confirmar equipos →"; btnConfirm.disabled = true; }
+
+  // Construir grilla y fijar capitanes
+  build2TeamsBoard(window.advancingTeams);
+
+  const rows = Array.from(document.querySelectorAll("#stage-redis2 .team-row"));
+  const selA = rows[0] ? rows[0].querySelectorAll("select") : [];
+  const selB = rows[1] ? rows[1].querySelectorAll("select") : [];
+  if(selA[0]){ selA[0].value = winners[0].captain; selA[0].dispatchEvent(new Event("change")); selA[0].disabled = true; }
+  if(selB[0]){ selB[0].value = winners[1].captain; selB[0].dispatchEvent(new Event("change")); selB[0].disabled = true; }
+
+  // Bloquear edición manual durante el draft
+  Array.from(document.querySelectorAll("#stage-redis2 .team-row select")).forEach(s=>{ s.disabled = true; });
+
+  const pickedCaps = winners.map(w=>w.captain);
+  let pool = getAlive().filter(n => !pickedCaps.includes(n));
+
+  const targetsA = Array.from(selA).slice(1,7);
+  const targetsB = Array.from(selB).slice(1,7);
+
+  function assignTo(target){
+    if(!target || pool.length===0) return false;
+    const idx = Math.floor(Math.random()*pool.length);
+    const pick = pool.splice(idx,1)[0];
+    target.value = pick;
+    target.dispatchEvent(new Event("change"));
+    return true;
+  }
+
+  if(btnAuto){
+    btnAuto.onclick = ()=>{
+      let turnA = true;
+      const timer = setInterval(()=>{
+        const doneA = targetsA.every(s=>s.value);
+        const doneB = targetsB.every(s=>s.value);
+        if(doneA && doneB){
+          clearInterval(timer);
+          commitDistribution2();
+          if(btnConfirm) btnConfirm.disabled = false;
+          return;
+        }
+        if(turnA && !doneA){ assignTo(targetsA.find(s=>!s.value)); }
+        else if(!turnA && !doneB){ assignTo(targetsB.find(s=>!s.value)); }
+        turnA = !turnA;
+      }, 280);
+    };
+  }
+
+  if(btnConfirm){
+    btnConfirm.onclick = ()=>{
+      commitDistribution2();
+      toast("Equipos listos.");
+      episode = 5;  // pasar a Ep5
+      challengeLockedEp = 0; resultsLockedEp = 0; nominees = []; immunes = [];
+      if(typeof resetEpisodeUI==="function") resetEpisodeUI();
+      go(3); updateChallengeAvailability();
+    };
+  }
+}
+
+/* --- Construcción de la grilla 7x7 (igual al Antiguo) --- */
+function build2TeamsBoard(teams){
+  teamBoard2.innerHTML = "";
+  const chosen = (teams && teams.length===2) ? teams : ["Equipo A","Equipo B"];
+  $("#teamsTitle2").textContent = `Redistribución de Equipo de ${chosen[0]} y ${chosen[1]}`;
+
+  chosen.forEach(t=>{
+    const wrap=document.createElement("div"); wrap.className="team-row";
+    const h=document.createElement("div"); h.className="team-title"; h.textContent=t; wrap.appendChild(h);
+    const grid=document.createElement("div"); grid.className="grid"; grid.style.gridTemplateColumns="repeat(7,1fr)";
+    for(let i=0;i<7;i++){
+      const slot=document.createElement("div"); slot.className="slot"; slot.dataset.team=t;
+      const icon=document.createElement("div"); icon.className="icon";
+      const img=document.createElement("img"); icon.appendChild(img); icon.appendChild(makeInitials("?"));
+      const nm=document.createElement("div"); nm.className="name"; nm.textContent="Vacío";
+      const s=document.createElement("select");
+      s.innerHTML=`<option value="">— Selecciona —</option>` + getAlive().map(n=>`<option>${n}</option>`).join("");
+      s.addEventListener("change", ()=>{
+        const v=s.value; nm.textContent=v||"Vacío";
+        const pic=icon.querySelector("img");
+        if(v){ loadImg(pic,imgFor(v),v); }
+        else{
+          const newImg=document.createElement("img"); pic.replaceWith(newImg);
+          icon.querySelector(".placeholder")?.remove();
+          icon.appendChild(makeInitials("?"));
+        }
+        enforceUniqueAcrossSelects('#stage-redis2'); validateTeamFill2();
+      });
+      slot.appendChild(icon); slot.appendChild(nm); slot.appendChild(s);
+      grid.appendChild(slot);
+    }
+    wrap.appendChild(grid); teamBoard2.appendChild(wrap);
+  });
+  enforceUniqueAcrossSelects('#stage-redis2'); validateTeamFill2();
+}
+
+/* --- Validación + botones clásicos (si usas modo manual) --- */
+function validateTeamFill2(){
+  const selects = $$("#stage-redis2 .slot select");
+  const vals = selects.map(s=>s.value).filter(Boolean);
+  const filledAll = vals.length===14 && new Set(vals).size===14;
+  $("#confirmTeams2").disabled = !filledAll;
+}
+$("#fillRandom2").addEventListener("click", ()=>{
+  const picks = shuffle(getAlive()).slice(0,14);
+  let idx=0; $$("#stage-redis2 .slot select").forEach(s=>{ s.value=picks[idx++]; s.dispatchEvent(new Event("change")); });
+  enforceUniqueAcrossSelects('#stage-redis2');
+});
+$("#confirmTeams2").addEventListener("click", ()=>{
+  commitDistribution2();
+  toast("Redistribución a 2 equipos lista.");
+  episode += 1; // Ep5
+  challengeLockedEp=0; resultsLockedEp=0; nominees=[]; immunes=[];
+  resetEpisodeUI();
+  go(3); updateChallengeAvailability();
+});
+
+/* ====== Aplicar resultados por episodio (TR + estado) ====== */
+function setTR(name, ep, state){
+  const key=norm(name);
+  const rec = trackData.find(r=>norm(r.name)===key);
+  if(!rec) return;
+const idx = Math.min(ep,17) - 1;
+rec.cells[idx] = TR.cell(state);
+}
+function applyEpisodeResults(phase, eliminatedNow){
+  const key=norm(eliminatedNow);
+  const contestants = getAlive().slice(); // SOLO vivos
+
+  if(phase.id<=2){
+    const teamWinners = (phase.id===1?distribution3:distribution2);
+    // Solo WIN para vivos del equipo ganador
+    const winningTeam = (Object.values(teamWinners).find(arr=>arr.some(n=>immunes.includes(n)))||[]);
+    winningTeam.filter(n=>contestants.includes(n)).forEach(n=> setTR(n, episode, 'WIN'));
+  }else{
+    immunes.forEach(n=> setTR(n, episode, 'WINI')); // se ve como "WIN" en color #4169E1
+  }
+  nominees.forEach(n=>{ if(norm(n)!==key) setTR(n, episode, 'DUEL'); });
+  contestants.filter(n=>!immunes.includes(n) && !nominees.includes(n)).forEach(n=> setTR(n, episode, 'SAFE'));
+  setTR(eliminatedNow, episode, 'ELIM');
+
+// HIGH en fases 3 y 4 (excepto comeback ep9)
+const ph = currentPhase(episode);
+if ((ph.id >= 3) && episode !== 9) {
+  const cand = contestants.filter(n =>
+    !immunes.includes(n) &&
+    !nominees.includes(n) &&
+    norm(n) !== norm(eliminatedNow)
+  );
+  if (cand.length > 0) {
+    const countHigh = cand.length >= 3 ? 2 : 1;
+    const picks = shuffle(cand).slice(0, countHigh);
+    picks.forEach(n => setTR(n, episode, 'HIGH'));
+  }
+}
+
+// LOW en Fase 3 (exactamente 1 por episodio)
+window.__lowMarkedByEp = window.__lowMarkedByEp || {};
+if (ph.id === 3 && episode !== 9 && !window.__lowMarkedByEp[episode]) {
+
+  const avoid = new Set([...(immunes || []), ...(nominees || []), eliminatedNow].filter(Boolean));
+
+  function hasTagNow(name, tag){
+    try { return (typeof getTR === "function") ? (getTR(name, episode) === tag) : false; }
+    catch(e){ return false; }
+  }
+
+  const candLow = contestants.filter(n => !avoid.has(n) && !hasTagNow(n, 'HIGH'));
+  if (candLow.length) {
+    const lowPick = candLow[Math.floor(Math.random() * candLow.length)];
+    setTR(lowPick, episode, 'LOW');
+    window.__lowMarkedByEp[episode] = true; 
+  }
+}
+
+
+  removeEvery(activePlayers, eliminatedNow);
+  if(!eliminated.some(n=>norm(n)===key)) eliminated.push(eliminatedNow);
+  activePlayers = diffAlive(uniqueList(activePlayers), eliminated);
+  eliminated   = uniqueList(eliminated);
+}
+
+/* ====== Comeback (Ep.9) ====== */
+function comebackSpecial(winnersOverride=null){
+  const aliveBefore = getAlive().slice();
+  aliveBefore.forEach(n=> setTR(n, episode, 'STAY'));
+const retired = uniqueList(eliminated.slice());
+if(retired.length===0){ toast('Sin eliminados para comeback.'); return; }
+
+// === CAMBIO: armar pool y filtrar PURG para la ELECCIÓN (pero visibles en UI)
+const pool = retired.slice(); // la lista que muestras
+const elegibles = pool.filter(n => !(window._seasonPurgados && window._seasonPurgados.has(norm(n))));
+
+// winnersOverride gana; si no hay override, elegir SOLO entre elegibles
+if (!winnersOverride && elegibles.length === 0){
+  toast("Nadie elegible para volver (PURG no pueden volver).");
+  return; // no aplicar comeback si todos son PURG
+}
+
+const winners = winnersOverride
+  ? winnersOverride.slice()
+  : (elegibles.length >= 2 ? shuffle(elegibles).slice(0,2) : elegibles.slice(0,1));
+
+// Aplicar al TR y a los estados (con seguro anti-PURG)
+retired.forEach(n=>{
+  if (winners.includes(n)) {
+    // Seguridad extra: si llegara a colarse un PURG, no permitir
+    if (window._seasonPurgados && window._seasonPurgados.has(norm(n))) {
+      setTR(n, episode, 'OUT'); // sigue fuera
+      return;
+    }
+    setTR(n, episode, 'IN');
+    removeEvery(eliminated, n);
+    if(!activePlayers.includes(n)) activePlayers.push(n);
+  } else {
+    setTR(n, episode, 'OUT');
+  }
+});
+  activePlayers = diffAlive(uniqueList(activePlayers), eliminated);
+  eliminated = uniqueList(eliminated);
+  if (challengeSelect.value) incUsed(challengeSelect.value); updateChallengeAvailability(); challengeLockedEp = episode; resultsLockedEp = episode; nominees=[]; immunes=[];
+}
+
+
+// ===== Purga (pantalla dedicada, no borra nada) =====
+let _purgeActive = [];
+let _purgeWinners = []; // se confirman al final
+let _purgePurged = [];  // los 2 de fuego
+let _purgeStageIdx = 0; // 0:Aire,1:Agua,2:Tierra,3:Fuego
+
+function buildPurgeCastGrid(list){
+  const grid = $("#purgeCastGrid"); if(!grid) return;
+  grid.innerHTML = "";
+  (list||[]).forEach(n=>{ const el = chip(n, n); el.classList.add("mini"); grid.appendChild(el); });
+}
+
+function resetPurgeFlow(){
+  // Bonju chip
+  (function(){ const box=$("#bonjuChip"); if(box){ box.innerHTML=""; const c=chip("Bonju","Bonju"); c.classList.add("small"); box.appendChild(c);} })();
+  _purgeActive = (window.cast20||[]).slice();
+  _purgeWinners = [];
+  _purgePurged = [];
+  _purgeStageIdx = 0;
+  $("#purgeResults").innerHTML = "";
+  const next = $("#purgeNextBtn"); if (next) next.style.display="none";
+}
+
+function ensureRowFor(name){
+  try{
+    if(!Array.isArray(trackData)) return;
+    const nn=(name||"").toLowerCase();
+    if(!trackData.some(r=>(r.name||"").toLowerCase()===nn)){ trackData.push({name, cells:[]}); }
+  }catch(e){}
+}
+
+const _purgeStages = [
+  { key:"Aire",
+    intro:"Para su primer reto, estarán sujetados a unos arneses y deberán pasar por unos circuitos que están en lo alto de esta locación. Quienes se caigan quedan fuera de esta etapa; quienes lleguen al otro extremo ganan su pase.",
+    win:4,
+    loseText:n=>`${n}: Se cayó de los circuitos y tendrá que seguir jugando.`,
+    winText:n=>`${n}: Logró superar todos los obstáculos, ha ganado su pase a la temporada.`
+  },
+  { key:"Agua",
+    intro:"Para su segundo reto, deberán sumergirse y encontrar la llave con su nombre antes de que acabe el tiempo.",
+    win:5,
+    loseText:n=>`${n}: Abrió más de un cofre, pero no encontró su llave a tiempo.`,
+    winText:n=>`${n}: Encontró su llave bajo el agua; gana su pase a la temporada.`
+  },
+  { key:"Tierra",
+    intro:"Para su tercer reto, cada uno deberá arrastrar una caja de metal hasta su base en el pantano.",
+    win:4,
+    loseText:n=>`${n}: No logró arrastrar el peso de su caja de metal.`,
+    winText:n=>`${n}: Arrastró su caja y la puso en su base; gana su pase a la temporada.`
+  },
+  { key:"Fuego",
+    intro:"Para su cuarto y último intento, deberán encender dos bases laterales y sostener la llama hasta el final.",
+    win:5,
+    losePool:2, // purgados finales
+    miscText:n=>`${n}: Prendió fuego pero se le apagó en el recorrido.`,
+    loseText:n=>`${n}: No logró superar el último desafío y ha sido purgado/a de The Xpedition.`,
+    winText:n=>`${n}: Logró llegar con su llama encendida; gana su pase a la temporada.`
+  },
+];
+
+function runPurgeStage(){
+  const res = $("#purgeResults"); if(!res) return;
+  res.innerHTML = "";
+  const s = _purgeStages[_purgeStageIdx];
+  const title = document.createElement("h4"); title.textContent = s.key; res.appendChild(title);
+  const intro = document.createElement("p"); intro.textContent = "Reto: " + s.intro; res.appendChild(intro);
+
+  const pool = _purgeActive.slice();
+  let winners=[]; let rest=[];
+
+  if (_purgeStageIdx<3){ // Aire/Agua/Tierra
+    winners = shuffle(pool).slice(0, s.win);
+    rest = pool.filter(n=>!winners.includes(n));
+  } else { // Fuego
+    let shuffled = shuffle(pool);
+    winners = shuffled.slice(0, s.win);
+    rest = shuffled.slice(s.win); // 2 purgados
+  }
+
+  const merged = shuffle(
+    winners.map(n=>({n, kind:"win"})).concat(
+      rest.map(n=>({n, kind:_purgeStageIdx===3 && rest.length===2 ? "purge" : (_purgeStageIdx===3 ? "misc" : "lose")}))
+    )
+  );
+
+  let i=0;
+  function step(){
+    if (i>=merged.length){
+      if (_purgeStageIdx<3){
+        // guardar winners pero NO escribir TR todavía
+        winners.forEach(w=>{ _purgeWinners.push(w); });
+        _purgeActive = rest.slice();
+      } else {
+        // Fuego: escribir PURG en EPISODIO 1 únicamente a los 2
+        winners.forEach(w=>{ _purgeWinners.push(w); });
+        rest.forEach(l=>{ _purgePurged.push(l); ensureRowFor(l); setTR(l,1,"PURG"); });
+      }
+      const next = $("#purgeNextBtn");
+      if (next){ next.style.display="inline-flex"; }
+      return;
+    }
+    const {n,kind} = merged[i++];
+    let text="";
+    if (kind==="win") text = s.winText(n);
+    else if (kind==="purge") text = s.loseText(n);
+    else if (kind==="misc") text = s.miscText(n);
+    else text = s.loseText(n);
+    const el = chip(n, text); el.classList.add(kind==="win"?"safe":"lose"); el.classList.add("reveal");
+    el.style.animationDelay = (i*120)+"ms";
+    res.appendChild(el);
+    setTimeout(step, 220);
+  }
+  step();
+}
+
+// Botones Purga
+document.addEventListener("click", (e)=>{
+  const id = e.target?.id;
+  if (id==="purgeStartBtn"){
+    const btn = e.target;
+    if (btn.dataset.locked==="1") return;
+    btn.dataset.locked="1"; btn.disabled=true;
+    const cast = (window.cast20||[]).slice();
+    if (cast.length!==20){ toast("Debes elegir 20 participantes (sin repetir)."); return; }
+    resetPurgeFlow();
+    runPurgeStage(); // Aire
+    const next = $("#purgeNextBtn"); if (next) next.style.display="none";
+  } else if (id==="purgeNextBtn"){
+    if (_purgeStageIdx<3){
+      _purgeStageIdx++;
+      $("#purgeResults").innerHTML = "";
+      runPurgeStage();
+      $("#purgeNextBtn").style.display="none";
+    } else {
+selected18     = _purgeWinners.slice();
+activePlayers  = selected18.slice();
+eliminated     = uniqueList((eliminated || []).concat(_purgePurged));
+
+episode = 1;
+
+window.roster20 = (window.cast20 || []).slice();
+window._seasonPurgados = new Set(_purgePurged.map(n => norm(n)));
+      build3TeamsBoard();
+      go(2);
+    }
+  }
+});
+
+</script>
+</body>
+</html>
