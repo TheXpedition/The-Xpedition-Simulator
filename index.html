@@ -697,6 +697,8 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     {key:"bruno-mary-travesti", needs:["Bruno Macri","Mary Hao"], parts:[{chip:"Bruno Macri"}," le dijo a ",{chip:"Mary Hao"}," que el también quería ser travesti."]},
     {key:"vitany-alexandro-doblecara", needs:["Vitany Glambert","Alexandro"], parts:[{chip:"Vitany Glambert"}," fue acusada por los fans de ",{chip:"Alexandro"}," de ser una doble cara."]},
     {key:"ocean-peggy-travesti", needs:["Ocean Harmony","Peggy"], parts:[{chip:"Ocean Harmony"}," le dijo a ",{chip:"Peggy"}," que ella también era travesti en Facebook."]},
+    {key:"dios-alexandro-lentes", needs:["Dios","Alexandro"], parts:[{chip:"Dios"}," le curó la ceguera a ",{chip:"Alexandro"}]},
+    {key:"dios-greg-lentes", needs:["Dios","Greg"], parts:[{chip:"Dios"}," le curó la ceguera a ",{chip:"Greg"}]},
     {key:"silvanya-rafael-boicot", needs:["Silvanya D'Lemberth","Rafael"], parts:[{chip:"Silvanya D'Lemberth"}," le dijo a ",{chip:"Rafael"}," que hicieran un boicot contra Bonju."]},
     {key:"silvanya-sophia-boicot", needs:["Silvanya D'Lemberth","Sophia Asdero"], parts:[{chip:"Silvanya D'Lemberth"}," le dijo a ",{chip:"Sophia Asdero"}," que hicieran un boicot contra Bonju."]},
     {key:"silvanya-lalamila-boicot", needs:["Silvanya D'Lemberth","Lalamila"], parts:[{chip:"Silvanya D'Lemberth"}," dijo que ",{chip:"Lalamila"}," era una experta en competencias e iba arrasar."]},
@@ -751,10 +753,13 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Catalina","Saco a Simba y se lo enseño al resto de la selva."],
     ["Catalina","Dijo que su nombre ahora era kylie catalina krystal courtney leafy mufasa simba TD diaz."],
     ["Catalina","Dijo que tenía cosas mas importantes que estar en este programa de cuarta."],
-    ["Bruno Macri","le empezó a disparar a todos."],
+    ["Bruno Macri","Le empezó a disparar a todos."],
+    ["Bruno Macri","Se la pasó hablando de travestis."],
     ["Bayron","Se puso a llorar en el reto y gritó mamii mamii me duele la piernita"],
     ["Bruno Macri","Tuvo que bañarse porque nadie aguantaba su olor a Christopher Gonzales"],
     ["Mary Hao","Confesó que su canción favorita es Fake Love de BTS."],
+    ["Mary Hao","Hizo la coreografia de Butter."],
+    ["Mary Hao","Namu, Jinnie, Yoongi, Hobi, TaeTae, Minnie, Kookie, BTS! ^^."],
     ["Bryan Montalvo","dijo que reviviria su concurso de hace 57548 meses."],
     ["Bryan Montalvo","Se subió a un tubo."],
     ["Coronel","Dijo que faltaban más hombres en la temporada"],
@@ -788,8 +793,11 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Dua Lingo","Arigato!"],
     ["Dua Lingo","Bonjour!"],
     ["Dua Lingo","Ciao ^^ konishigua"],
-    ["Doppel","dijo que no la invitaron a la temporada y se metió por la ventana"],
-    ["Eris Midnight","expresó su seguridad en obtener el Poop of the Year"],
+    ["Dua Lingo","Laura está cerca de ti, no la hagas esperar 🤤"],
+    ["Doppel","Dijo que no la invitaron a la temporada y se metió por la ventana"],
+    ["Eris Midnight","Expresó su seguridad en obtener el Poop of the Year"],
+    ["Eris Midnight","💩"],
+    ["Eris Midnight","Le hizo honor a su legado y se hizo Poop of the Year en los calzoncillos"],
     ["Felix","Se hizo el amable falsamente."],
     ["Felix","Se le empezó a caer la piel durante el reto."],
     ["Felix","Fue confundido con una momia y lo metieron a una tumba."],
@@ -809,7 +817,8 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Renata","El viento le quitó la peluca y se dieron cuenta que es calva."],
     ["Lalamila","dijo que nunca iba a confiar en nadie más."],
     ["Leandro","se enojó porque todos dicen que es el más colapsado de la temporada"],
-    ["Lucas Mendez","fue a donde todos estaban dormidos y los obligó a escuchar la canción nueva de Cardi B"],
+    ["Lucas Mendez","Fue a donde todos estaban dormidos y los obligó a escuchar la canción nueva de Cardi B"],
+    ["Lucas Mendez","Contó la historia de vida de Cardi B desde que era stripper"],
     ["Lucas Mendez","Dijo que si le ponian el Chaleco iba a mandarles bombas a sus casas"],
     ["Ari Salgado","Pensó que el programa era Survivor y se fue a buscar ídolos"],
     ["Paulis Queen","No hizo una Paula García de Cartón"],
@@ -834,6 +843,7 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Ignacio Ricci","Mando un audio de mil horas."],
     ["Silvanya D'Lemberth","Buscó conflictos con el resto del cast."],
     ["Adriana Pereira","z z z"],
+    ["Adriana Pereira","😴"],
     ["Adriana Pereira","No llegó al reto porque se quedo dormida en su cama."],
     ["Adriana Pereira","Sorprendió a todos con sus habilidades en la cama."],
     ["Nahuee","Se hizo la rascadita navideña."],
@@ -841,6 +851,7 @@ const BONJU_IMG = ["personajes/bonju.png","personajes/bonju.jpg","personajes/bon
     ["Marianito","Se orinó la cama."],
     ["Marianito","Se poposeó la cama."],
     ["Marianito","Se vomitó la cama."],
+    ["Azael","Se le salió un mojón durante el reto."],
     ["Bryan Montalvo","Se disfrazó de plaza sésamo."],
     ["Ximena","No aguantó las ganas y se orinó encima."],
     ["Cocomong","Cocococo CococoO COCOCOOCOCOCOCO."],
@@ -1823,6 +1834,7 @@ if (A.includes("Catalina")) add(evRowSingle("Catalina","se enojó en el reto y a
   if (ep >= 18 && A.includes("Xina Ro")) add(evRowSingle("Xina Ro","El público le arrojó tomates y fue abucheada."));
   if (ep >= 18 && A.includes("Dani")) add(evRowSingle("Dani","El público le arrojó tomates y fue abucheada."));
   if (ep >= 18 && A.includes("Coronel")) add(evRowSingle("Dani","El público le arrojó tomates y fue abucheado."));
+  if (ep >= 18 && A.includes("Dios")) add(evRowSingle("Dios","Fue aplaudido por el público por su increible trabajo durante toda la temporada."));
   if (ep >= 18 && A.includes("Bruno Macri")) add(evRowSingle("Bruno Macri","Si llegó hasta la final fue porque se la paso salvandose en todo el simulador."));
   if (ep >= 18 && A.includes("Adriana Pereira")) add(evRowSingle("Adriana Pereira","Se durmió durante el episodio final."));
   if (ep >= 18 && A.includes("Bayron")) add(evRowSingle("Bayron","Se pusó a llorar durante la final diciendo que nunca ha ganado nada."));
