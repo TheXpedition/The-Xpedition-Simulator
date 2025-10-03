@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Xpedition — Simulador</title>
+<title>The Xpedition — Simulador (Patched v6.1)</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -543,6 +543,67 @@ body{
 <script>
 // === SONGS list for music-based challenges ===
 if (typeof window.SONGS === 'undefined') window.SONGS = ["Sugar On My Tongue - Tyler The Creator", "Dove - Pillar Point", "It’s My Life - Bonjovi", "Level Up - Ciara", "Paparazzi - Lady Gaga", "Celebrity Skin - Hole", "Baby One More Time - Britney Spears", "Come & Get It - Selena Gomez", "Calocha - Barbie Ricán", "Beat It - Michael Jackson", "Deutschland - Rammstein", "Bring Me To Life - Evanescence", "What’s Your Pleasure? - Jessie Ware", "The Rhythm Of The Night - Corona", "Esperma - BonjuVEVO", "Maniac - Michael Sembello", "All Hands On Deck - Tinashe", "Round We Go - Big Sister", "The Bad Touch - Bloodhound Gang", "Family Affair - Mary J. Blige", "Maria - HWASA", "Last Friday Night - Katy Perry", "Houdini - Dua Lipa", "23 - Mike WilLL Made-It, Miley Cyrus, Whiz Khalifa", "Love Really Hurts Without You - Billy Ocean", "Swalla- Jason Derulo, Nicki Minaj, Ty Dolla $ign", "Lose Control - Missy Elliot, Ciara", "4 Minutes - Madonna, Justin Timberlake", "MOVE - TAEMIN", "Hip - MAMAMOO", "Streets - Doja Cat", "Side Effects- Stray Kids", "Real Things - Javine", "Pump Up The Jam - Technotronic", "212 - Azealia Banks", "Baby Love - Petite Meller", "Kill V. Maim - Grimes", "Tongue - MNEK", "Snakeskin- Rina Sawayama", "Blinding Lights - The Weeknd", "Super Bass - Nicki Minaj", "The Less I Know The Better - Tame Impala", "Acid Rain - Lorn", "Baby Shark - Babay", "What Does The Fox Say? - Ylvis", "Macho Man - Village People", "Destination Calabria (Radio Edit) - Crystal Waters", "I Love Hollywood! - Slayyyter", "MIDDLE OF THE NIGHT - Elley Duhé", "My Mind - Yebba", "Calimenio - Grupo Bip", "El Baile del Gorila - Melody", "One Word - Kelly Osbourne", "Monolith - Twin Tribes", "Flutes - Hot Chip", "Sextape - Deftones", "Brother Louie - Modern Talking", "Come As You Are - Nirvana", "DARE - Gorillaz", "Black Velvet - Alannah Myles", "Umbrella - Rihanna"];
+
+// ===== Limitador de victorias INDIVIDUALES =====
+const INDIV_WIN_CAP = 4;     // máximo de wins individuales
+const INDIV_COOLDOWN = 3;    // deben pasar 3 episodios entre wins individuales
+
+// Estado acumulado por participante
+const indivWins = Object.create(null);      // { nombre: cantidadWinsInd }
+const lastIndivWinEp = Object.create(null); // { nombre: episodioUltimoWinInd }
+
+/** ¿puede ganar hoy individual? (respeta CAP + cooldown) */
+function eligibleForIndivWin(name, ep) {
+  const wins = indivWins[name] || 0;
+  if (wins >= INDIV_WIN_CAP) return false;
+  const last = lastIndivWinEp[name];
+  if (last != null && (ep - last) < INDIV_COOLDOWN) return false;
+  return true;
+}
+
+/** registrar una victoria individual (¡NO usar en victorias grupales!) */
+function registerIndivWin(name, ep) {
+  indivWins[name] = (indivWins[name] || 0) + 1;
+  lastIndivWinEp[name] = ep;
+}
+
+/** seleccionar UN ganador individual válido (con fallback seguro) */
+function pickIndividualWinner(candidates, ep) {
+  // 1) elegibles por cap+cooldown
+  const eligible = candidates.filter(n => eligibleForIndivWin(n, ep));
+  let pool = eligible.length
+    ? eligible
+    // 2) si no hay elegibles, relajamos SOLO cooldown (cap sigue firme)
+    : candidates.filter(n => (indivWins[n] || 0) < INDIV_WIN_CAP);
+
+  // 3) caso extremo: aún vacío -> usar todos
+  if (!pool.length) pool = candidates.slice();
+
+  const winner = (typeof sample === "function")
+    ? sample(pool, 1)[0]
+    : pool[Math.floor(Math.random() * pool.length)];
+
+  registerIndivWin(winner, ep);
+  return winner;
+}
+
+/** (opcional) marcar WIN individual en el TR si no tienes un setter.
+ *  Si ya usas funciones tipo setTR/paintTR, puedes ignorar esta helper. */
+function markTRIndivWin(name, ep) {
+  if (typeof setTR === "function") { setTR(name, ep, "WINI"); return; }
+  if (typeof paintTR === "function") { paintTR(name, ep, "wini", "WIN"); return; }
+  // fallback mínimo: buscar la fila por nombre y pintar la celda con clase 'wini'
+  try{
+    const table = document.getElementById("trkTable");
+    const body = document.getElementById("trkBody");
+    if (!table || !body) return;
+    const row = [...body.querySelectorAll("tr")].find(tr => (tr.children[1]?.textContent||"").trim() === name);
+    const cell = row?.children?.[ep + 1]; // pos, nombre, ep1…
+    if (cell){
+      cell.innerHTML = '<span class="cell wini">WIN</span>';
+    }
+  }catch(e){}
+}
 
 /* ====== Datos ====== */
 const ALL_PARTICIPANTS = [
@@ -2998,12 +3059,31 @@ predefinedComebackWinners = (elegibles.length >= 2)
 
   } else {
     // Fases 3 y 4: juego individual (inmunidad doble)
-    const pool = getAlive();
-    immunes = shuffle(pool).slice(0, 2);
-    $("#immuneTeamChip").innerHTML = `<span class="pill">Juego individual</span>`;
-    $("#immuneList").innerHTML = "";
-    immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
-  }
+// Fases 3 y 4: juego individual (inmunidad doble)
+{
+  const pool = (typeof getAlive === "function")
+    ? getAlive().slice()
+    : (window.activePlayers || alive || []).slice();
+
+  // ganador 1 con límite 4 + cooldown 3
+  const w1 = pickIndividualWinner(pool, episode);
+
+  // para el 2do, evita repetir en el mismo episodio
+  const pool2 = pool.filter(n => n !== w1);
+  const w2 = pickIndividualWinner(pool2, episode);
+
+  immunes = [w1, w2];
+
+  // pinta UI igual que antes
+  $("#immuneTeamChip").innerHTML = `<span class="pill"><b>Juego individual</b></span>`;
+  $("#immuneList").innerHTML = "";
+  immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
+
+  // (opcional) marca TR como WIN individual
+  markTRIndivWin(w1, episode);
+  markTRIndivWin(w2, episode);
+}
+
 
   // Narrativa resumida
   const bonjuSpeech = buildNarration(chosen, { winTeam });
