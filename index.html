@@ -3058,32 +3058,48 @@ predefinedComebackWinners = (elegibles.length >= 2)
     immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
 
   } else {
-    // Fases 3 y 4: juego individual (inmunidad doble)
-// Fases 3 y 4: juego individual (inmunidad doble)
-{
-  const pool = (typeof getAlive === "function")
-    ? getAlive().slice()
-    : (window.activePlayers || alive || []).slice();
+// Fases 3 y 4: juego individual (inmunidad doble) — CAP 4 + COOLDOWN 3
+window._indivWins  = window._indivWins  || Object.create(null); // {nombre: wins}
+window._lastIndiv  = window._lastIndiv  || Object.create(null); // {nombre: ep}
+const CAP = 4, CD = 3;
 
-  // ganador 1 con límite 4 + cooldown 3
-  const w1 = pickIndividualWinner(pool, episode);
+const pool = (typeof getAlive === "function") ? getAlive().slice()
+            : (typeof alive !== "undefined" ? alive.slice() : []);
 
-  // para el 2do, evita repetir en el mismo episodio
-  const pool2 = pool.filter(n => n !== w1);
-  const w2 = pickIndividualWinner(pool2, episode);
-
-  immunes = [w1, w2];
-
-  // pinta UI igual que antes
-  $("#immuneTeamChip").innerHTML = `<span class="pill"><b>Juego individual</b></span>`;
-  $("#immuneList").innerHTML = "";
-  immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
-
-  // (opcional) marca TR como WIN individual
-  markTRIndivWin(w1, episode);
-  markTRIndivWin(w2, episode);
+// ¿puede ganar hoy?
+function eligible(name){
+  const w = window._indivWins[name] || 0;
+  if (w >= CAP) return false;
+  const last = window._lastIndiv[name];
+  return (last == null) || ((episode - last) >= CD);
 }
 
+// elige 1 ganador aplicando restricciones y con fallbacks seguros
+function pickOne(arr){
+  let list = arr.filter(eligible);
+  if (!list.length) list = arr.filter(n => (window._indivWins[n] || 0) < CAP); // relaja cooldown
+  if (!list.length) list = arr.slice(); // extremo: sin filtros
+
+  const idx = Math.floor(Math.random() * list.length);
+  const name = list[idx];
+
+  // registrar win individual
+  window._indivWins[name] = (window._indivWins[name] || 0) + 1;
+  window._lastIndiv[name] = episode;
+  return name;
+}
+
+// dos inmunidades individuales sin repetir en el mismo episodio
+const w1 = pickOne(pool);
+const w2 = pickOne(pool.filter(n => n !== w1));
+immunes = [w1, w2];
+
+// UI
+$("#immuneTeamChip").innerHTML = `<span class="pill">Juego individual</span>`;
+$("#immuneList").innerHTML = "";
+immunes.forEach(n => $("#immuneList").appendChild(chip(n, n)));
+
+  }
 
   // Narrativa resumida
   const bonjuSpeech = buildNarration(chosen, { winTeam });
