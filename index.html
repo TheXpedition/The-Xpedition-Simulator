@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Xpedition — Simulador (Patched v6.1)</title>
+<title>The Xpedition — Simulador</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -3227,7 +3227,7 @@ function prepareVests(phase, winTeam){
 
     // Resto de episodios: 1 por rendimiento (bloqueado) + eliges 3 (total 4)
     requiredVestsCount = 4;
-    const auto1 = rankByPerformance(poolP1, 'p1').slice(0,1);
+    const auto1 = rankByPerformance(poolP1, 'p1').slice(0,2);
     nominees = auto1.slice();
 
     grid.innerHTML = "";
@@ -3240,7 +3240,7 @@ function prepareVests(phase, winTeam){
       sec.appendChild(row); grid.appendChild(sec);
     });
 
-    $("#vestsTitle").textContent = `Fase 1: Asigna 3 chalecos de sentencia (el nominado por rendimiento no se puede cambiar) — entre ${loseTeams.join(" y ")}`;
+$("#vestsTitle").textContent = `Fase 1: Asigna 2 chalecos de sentencia (El equipo ganador eligió los otros dos.) — entre ${loseTeams.join(" y ")}`;
   }
 
 /* ====== FASE 2 ====== */
