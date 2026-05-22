@@ -622,9 +622,7 @@ function markTRIndivWin(name, ep) {
 
 /* ====== Datos ====== */
 const ALL_PARTICIPANTS = [
-"Dios", "Adriana Pereira", "Alexandro", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Azael", "Azealia Midnight", "Bayron", "Beto", "Bruno Macri", "Bryan Montalvo", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Dani", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Kim Camila", "Lalamila", "Leandro", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Paula Garcia", "Paulis Queen", "Peggy", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Sophia Asdero", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
-
-
+ "Dios", "Adriana Pereira", "Alexandro", "Alexia", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Atneimip", "Azael", "Azealia Midnight", "Bayron", "Beto", "Brave", "Bruno Macri", "Bryan Montalvo", "Carlos Harrington", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Daphne Blake", "Dani", "Dios", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Gokuh Moreno", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Katy", "Kim Camila", "Lalamila", "Leandro", "Luis", "Lola Mugler", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Mati", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Pablo", "Paula Garcia", "Paulis Queen", "Peggy", "Pepi", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Robin", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Sophia Asdero", "Sophie Bradley", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
 ];
 
 /* ====== Géneros (pronombres para badges) ====== */
@@ -638,17 +636,26 @@ function __gNorm(s){
 
 const GENDER_MAP = (()=> {
   const raw = [
-    ["Adriana Pereira","F"],["Alexandro","M"],["Alice","F"],["Amanda Lewis","F"],["Anderson Moreno","M"],["Andromeda","F"],["Ari Salgado","M"],
-    ["Azael","M"],["Azealia Midnight","F"],["Bayron","M"],["Beto","M"],["Bruno Macri","M"],["Bryan Montalvo","M"],
-    ["Catalina","F"],["Christopher","M"],["Cocomong","M"],["Coronel","M"],["Daelly","F"],["Dani","F"],["Dios","M"],
-    ["Doppel","F"],["Dua Lingo","F"],["Eduard","M"],["Eduardo","M"],["Edna Droga","F"],["Elian","M"],["Elvin","M"],
-    ["Emanuel","M"],["Emmy Mango","F"],["Eris Midnight","M"],["Esteban","M"],["Felix","M"],["Gabriel Sab","M"],
-    ["Garnet","M"],["Greg","M"],["Ian Esteban","M"],["Ignacio Ricci","M"],["Isabel","F"],["Ivan Serrano","M"],
-    ["Ivy","F"],["Iñaella Rose","F"],["Julián","M"],["Kim Camila","F"],["Lalamila","F"],["Leandro","M"],
-    ["Lucas Mendez","M"],["Luciano","M"],["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Nahuee","M"],["Nicki Gorilaj","F"],
-    ["Nidia Mirella","F"],["Ocean Harmony","F"],["Oscar","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pier","M"],["Plastique Doll","F"],
-    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],["Sophia Asdero","F"],
-    ["Stalin Mango","M"],["Vita","M"],["Vitany Glambert","F"],["Ximena","F"],["Xina Ro","F"]
+       ["Adriana Pereira","F"],["Alexandro","M"],["Alexia","F"],["Alice","F"],["Amanda Lewis","F"],["Anderson Moreno","M"],["Andromeda","F"],["Ari Salgado","M"],
+    ["Atneimip","F"],["Azael","M"],["Azealia Midnight","F"],
+    ["Bayron","M"],["Beto","M"],["Brave","M"],["Bruno Macri","M"],["Bryan Montalvo","M"],
+    ["Carlos Harrington","M"],["Catalina","F"],["Christopher","M"],["Cocomong","M"],["Coronel","M"],
+    ["Daelly","F"],["Daphne Blake","F"],["Dani","F"],["Dios","M"],["Doppel","F"],["Dua Lingo","F"],
+    ["Eduard","M"],["Eduardo","M"],["Edna Droga","F"],["Elian","M"],["Elvin","M"],["Emanuel","M"],
+    ["Emmy Mango","F"],["Eris Midnight","M"],["Esteban","M"],
+    ["Felix","M"],
+    ["Gabriel Sab","M"],["Garnet","M"],["Gokuh Moreno","F"],["Greg","M"],
+    ["Ian Esteban","M"],["Ignacio Ricci","M"],["Isabel","F"],["Ivan Serrano","M"],["Ivy","F"],["Iñaella Rose","F"],
+    ["Julián","M"],["Katy","F"],["Kim Camila","F"],
+    ["Lalamila","F"],["Leandro","M"],["Luis","M"],["Lola Mugler","F"],["Lucas Mendez","M"],["Luciano","M"],
+    ["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Mati","M"],
+    ["Nahuee","M"],["Nicki Gorilaj","F"],["Nidia Mirella","F"],
+    ["Ocean Harmony","F"],["Oscar","M"],
+    ["Pablo","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pepi","F"],["Pier","M"],["Plastique Doll","F"],
+    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Robin","M"],
+    ["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],["Sophia Asdero","F"],["Sophie Bradley","F"],["Stalin Mango","M"],
+    ["Vita","M"],["Vitany Glambert","F"],
+    ["Ximena","F"],["Xina Ro","F"]
   ];
   const m = {};
   raw.forEach(([n,g]) => { m[__gNorm(n)] = g; });
