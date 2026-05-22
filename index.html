@@ -364,7 +364,7 @@ body{
 
 <!-- ===== PASO 1 ===== -->
 <section class="wrap glass stage active" id="stage-1">
-  <h3 class="note">Elenco (elige 20 Participantes)</h3>
+  <h3 class="note" id="castTitle">Elenco (elige 20 Participantes)</h3>
   <div class="grid cols-7" id="castGrid"></div>
 
   <div class="control-bar">
@@ -373,6 +373,12 @@ body{
   </div>
 
   <div class="teams-row">
+    <label class="teams-box">Cantidad de participantes
+      <select id="castSize">
+        <option value="20">20 participantes</option>
+        <option value="18">18 participantes</option>
+      </select>
+    </label>
     <label class="teams-box">Equipo 1
       <select id="team1"></select>
     </label>
@@ -387,6 +393,15 @@ body{
         <option value="">— Selecciona —</option>
         <option>Duelos</option>
         <option>Estrellas</option>
+      </select>
+    </label>
+    <label class="teams-box">Tipo de final
+      <select id="finalMode">
+        <option value="">— Selecciona —</option>
+        <option>2 Finalistas</option>
+        <option>3 Finalistas</option>
+        <option>Jurado en Top4</option>
+        <option>Jurado en Top2</option>
       </select>
     </label>
     <div style="flex:1"></div>
@@ -607,7 +622,9 @@ function markTRIndivWin(name, ep) {
 
 /* ====== Datos ====== */
 const ALL_PARTICIPANTS = [
- "Dios", "Adriana Pereira", "Alexandro", "Alexia", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Atneimip", "Azael", "Azealia Midnight", "Bayron", "Beto", "Brave", "Bruno Macri", "Bryan Montalvo", "Carlos Harrington", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Daphne Blake", "Dani", "Dios", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Gokuh Moreno", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Katy", "Kim Camila", "Lalamila", "Leandro", "Luis", "Lola Mugler", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Mati", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Pablo", "Paula Garcia", "Paulis Queen", "Peggy", "Pepi", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Robin", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Sophia Asdero", "Sophie Bradley", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
+"Dios", "Adriana Pereira", "Alexandro", "Alice", "Amanda Lewis", "Anderson Moreno", "Andromeda", "Ari Salgado", "Azael", "Azealia Midnight", "Bayron", "Beto", "Bruno Macri", "Bryan Montalvo", "Catalina", "Christopher", "Cocomong", "Coronel", "Daelly", "Dani", "Doppel", "Dua Lingo", "Eduard", "Eduardo", "Edna Droga", "Elian", "Elvin", "Emanuel", "Emmy Mango", "Eris Midnight", "Esteban", "Felix", "Gabriel Sab", "Garnet", "Greg", "Ian Esteban", "Ignacio Ricci", "Isabel", "Ivan Serrano", "Ivy", "Iñaella Rose", "Julián", "Kim Camila", "Lalamila", "Leandro", "Lucas Mendez", "Luciano", "Marcos", "Marianito", "Mary Hao", "Nahuee", "Nicki Gorilaj", "Nidia Mirella", "Ocean Harmony", "Oscar", "Paula Garcia", "Paulis Queen", "Peggy", "Pier", "Plastique Doll", "Rafael", "Renata", "Renzo", "Samuel Gamert", "Sandro", "Silvanya D'Lemberth", "Sophia Asdero", "Stalin Mango", "Vita", "Vitany Glambert", "Ximena", "Xina Ro"
+
+
 ];
 
 /* ====== Géneros (pronombres para badges) ====== */
@@ -621,26 +638,17 @@ function __gNorm(s){
 
 const GENDER_MAP = (()=> {
   const raw = [
-    ["Adriana Pereira","F"],["Alexandro","M"],["Alexia","F"],["Alice","F"],["Amanda Lewis","F"],["Anderson Moreno","M"],["Andromeda","F"],["Ari Salgado","M"],
-    ["Atneimip","F"],["Azael","M"],["Azealia Midnight","F"],
-    ["Bayron","M"],["Beto","M"],["Brave","M"],["Bruno Macri","M"],["Bryan Montalvo","M"],
-    ["Carlos Harrington","M"],["Catalina","F"],["Christopher","M"],["Cocomong","M"],["Coronel","M"],
-    ["Daelly","F"],["Daphne Blake","F"],["Dani","F"],["Dios","M"],["Doppel","F"],["Dua Lingo","F"],
-    ["Eduard","M"],["Eduardo","M"],["Edna Droga","F"],["Elian","M"],["Elvin","M"],["Emanuel","M"],
-    ["Emmy Mango","F"],["Eris Midnight","M"],["Esteban","M"],
-    ["Felix","M"],
-    ["Gabriel Sab","M"],["Garnet","M"],["Gokuh Moreno","F"],["Greg","M"],
-    ["Ian Esteban","M"],["Ignacio Ricci","M"],["Isabel","F"],["Ivan Serrano","M"],["Ivy","F"],["Iñaella Rose","F"],
-    ["Julián","M"],["Katy","F"],["Kim Camila","F"],
-    ["Lalamila","F"],["Leandro","M"],["Luis","M"],["Lola Mugler","F"],["Lucas Mendez","M"],["Luciano","M"],
-    ["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Mati","M"],
-    ["Nahuee","M"],["Nicki Gorilaj","F"],["Nidia Mirella","F"],
-    ["Ocean Harmony","F"],["Oscar","M"],
-    ["Pablo","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pepi","F"],["Pier","M"],["Plastique Doll","F"],
-    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Robin","M"],
-    ["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],["Sophia Asdero","F"],["Sophie Bradley","F"],["Stalin Mango","M"],
-    ["Vita","M"],["Vitany Glambert","F"],
-    ["Ximena","F"],["Xina Ro","F"]
+    ["Adriana Pereira","F"],["Alexandro","M"],["Alice","F"],["Amanda Lewis","F"],["Anderson Moreno","M"],["Andromeda","F"],["Ari Salgado","M"],
+    ["Azael","M"],["Azealia Midnight","F"],["Bayron","M"],["Beto","M"],["Bruno Macri","M"],["Bryan Montalvo","M"],
+    ["Catalina","F"],["Christopher","M"],["Cocomong","M"],["Coronel","M"],["Daelly","F"],["Dani","F"],["Dios","M"],
+    ["Doppel","F"],["Dua Lingo","F"],["Eduard","M"],["Eduardo","M"],["Edna Droga","F"],["Elian","M"],["Elvin","M"],
+    ["Emanuel","M"],["Emmy Mango","F"],["Eris Midnight","M"],["Esteban","M"],["Felix","M"],["Gabriel Sab","M"],
+    ["Garnet","M"],["Greg","M"],["Ian Esteban","M"],["Ignacio Ricci","M"],["Isabel","F"],["Ivan Serrano","M"],
+    ["Ivy","F"],["Iñaella Rose","F"],["Julián","M"],["Kim Camila","F"],["Lalamila","F"],["Leandro","M"],
+    ["Lucas Mendez","M"],["Luciano","M"],["Marcos","M"],["Marianito","M"],["Mary Hao","F"],["Nahuee","M"],["Nicki Gorilaj","F"],
+    ["Nidia Mirella","F"],["Ocean Harmony","F"],["Oscar","M"],["Paula Garcia","F"],["Paulis Queen","F"],["Peggy","F"],["Pier","M"],["Plastique Doll","F"],
+    ["Rafael","M"],["Renata","F"],["Renzo","M"],["Samuel Gamert","M"],["Sandro","M"],["Silvanya D'Lemberth","F"],["Sophia Asdero","F"],
+    ["Stalin Mango","M"],["Vita","M"],["Vitany Glambert","F"],["Ximena","F"],["Xina Ro","F"]
   ];
   const m = {};
   raw.forEach(([n,g]) => { m[__gNorm(n)] = g; });
@@ -654,7 +662,7 @@ function genderSuffix(name){
 
 function getRosterOrder(){
   // Si tenemos el cast completo (20), usamos ese orden
-  let base = (Array.isArray(window.roster20) && window.roster20.length === 20)
+  let base = (Array.isArray(window.roster20) && window.roster20.length >= 18)
     ? window.roster20.slice()
     : (activePlayers || []).concat(eliminated || []);
   // Mover purgados al final (en su mismo orden)
@@ -1193,6 +1201,8 @@ let step=1, episode=1;
 let selected18 = [];
 let selectedTeams = [];
 let comebackMode = "";
+let castSize = 20;
+let finalMode = "2 Finalistas";
 let distribution3 = {}; // 3 teams
 let distribution2 = {}; // 2 teams
 let advancingTeams = [];
@@ -1208,7 +1218,7 @@ let predefinedComebackWinners = null;
 let comebackApplied = false;
 
 /* Final (18) en dos partes */
-let finalState = { stage:0, finalists:[], eliminated:[], winner:null, runner:null };
+let finalState = { stage:0, finalists:[], eliminated:[], winner:null, runner:null, runners:[], mode:"2 Finalistas" };
 
 let talentShowUsed = false;
 let eventCount_BayronAndro = 0;
@@ -1405,7 +1415,8 @@ function playedThisSeason(name){
 // Ranking completo de la temporada (peor→mejor), usando tu orden de 'eliminated' + final
 function computeSeasonRanking(){
   const base = (Array.isArray(eliminated) ? eliminated.slice() : []);
-  if (finalState && finalState.runner) base.push(finalState.runner);
+  if (finalState && Array.isArray(finalState.runners) && finalState.runners.length) finalState.runners.forEach(n=>base.push(n));
+  else if (finalState && finalState.runner) base.push(finalState.runner);
   if (finalState && finalState.winner) base.push(finalState.winner);
   // base ahora va de peor a mejor. Top6 = últimos 6
   return base;
@@ -1542,7 +1553,7 @@ const castGrid=$("#castGrid");
 function buildCastGrid(){
   castGrid.innerHTML="";
   for(let i=0;i<20;i++){
-    const slot = document.createElement("div"); slot.className="slot"; slot.dataset.index=i;
+    const slot = document.createElement("div"); slot.className="slot cast-slot"; slot.dataset.index=i;
     const icon = document.createElement("div"); icon.className="icon";
     const img = document.createElement("img"); icon.appendChild(img); icon.appendChild(makeInitials("?"));
     const name = document.createElement("div"); name.className="name"; name.textContent="Elegir participante";
@@ -1562,6 +1573,19 @@ function buildCastGrid(){
   }
 }
 buildCastGrid(); enforceUniqueAcrossSelects('#castGrid');
+function getCastSize(){ return parseInt(document.getElementById('castSize')?.value || '20', 10); }
+function updateCastSlots(){
+  castSize = getCastSize();
+  $$('#castGrid .slot').forEach((slot,i)=>{
+    const sel = slot.querySelector('select');
+    const show = i < castSize;
+    slot.style.display = show ? '' : 'none';
+    if(sel){ sel.disabled = !show; if(!show) sel.value = ''; }
+  });
+  const title = document.getElementById('castTitle');
+  if(title) title.textContent = `Elenco (elige ${castSize} Participantes)`;
+  updateCastState();
+}
 
 function fillTeamsSelects(){
   const ids=['team1','team2','team3'];
@@ -1572,27 +1596,32 @@ fillTeamsSelects();
 ['team1','team2','team3'].forEach(id=>{ const s=document.getElementById(id); s.addEventListener('change',()=>{ const vals=['team1','team2','team3'].map(i=>document.getElementById(i).value); ['team1','team2','team3'].forEach(j=>{ const sj=document.getElementById(j); Array.from(sj.options).forEach(o=>{ if(!o.value){o.disabled=false;return;} if(sj.value===o.value){o.disabled=false;} else {o.disabled = vals.includes(o.value);} }); }); }); });
 
 function getStep1State(){
-  const castVals = $$("#castGrid select").map(s=>s.value).filter(Boolean);
-  const castOK   = castVals.length===20 && new Set(castVals).size=== 20;
+  castSize = getCastSize();
+  const castVals = $$("#castGrid select").filter(s=>!s.disabled).map(s=>s.value).filter(Boolean);
+  const castOK   = castVals.length===castSize && new Set(castVals).size===castSize;
   const tVals    = ['team1','team2','team3'].map(id=>document.getElementById(id).value).filter(Boolean);
   const teamsOK  = tVals.length===3 && new Set(tVals).size===3;
   const comeback = document.getElementById('comeback').value || "";
-  return { castVals:[...new Set(castVals)], tVals, comeback, ok:castOK&&teamsOK&&!!comeback };
+  const final = document.getElementById('finalMode')?.value || "";
+  return { castVals:[...new Set(castVals)], tVals, comeback, final, ok:castOK&&teamsOK&&!!comeback&&!!final };
 }
 function updateCastState(){
-  const vals = $$("#castGrid select").map(s=>s.value).filter(Boolean);
-  $("#castCountHelp").textContent = `${new Set(vals).size}/20 seleccionados`;
+  castSize = getCastSize();
+  const vals = $$("#castGrid select").filter(s=>!s.disabled).map(s=>s.value).filter(Boolean);
+  $("#castCountHelp").textContent = `${new Set(vals).size}/${castSize} seleccionados`;
   nextBtn.disabled = !getStep1State().ok;
 }
+updateCastSlots();
 
 document.addEventListener('change', (e)=>{
-  if(e.target.closest('#castGrid') || ['team1','team2','team3','comeback'].includes(e.target.id)){
+  if(e.target.id==='castSize') updateCastSlots();
+  if(e.target.closest('#castGrid') || ['team1','team2','team3','comeback','castSize','finalMode'].includes(e.target.id)){
     updateCastState();
   }
 });
 
 $("#randomCast").addEventListener("click", ()=>{
-  const picks = shuffle(ALL_PARTICIPANTS.filter(n=>n!=="Bonju")).slice(0,20);
+  const picks = shuffle(ALL_PARTICIPANTS.filter(n=>n!=="Bonju")).slice(0,getCastSize());
   $$("#castGrid select").forEach((s,i)=>{ s.value=picks[i]||""; s.dispatchEvent(new Event('change')); }); enforceUniqueAcrossSelects('#castGrid');
 });
 $("#randomTeams").addEventListener("click", ()=>{
@@ -1603,19 +1632,32 @@ $("#randomTeams").addEventListener("click", ()=>{
 
 nextBtn.addEventListener("click", ()=>{
   if(step===1){
-    const {castVals,tVals,comeback,ok} = getStep1State();
-    if(!ok){ toast("Completa: 20 únicos + 3 equipos distintos + formato."); return; }
+    const {castVals,tVals,comeback,final,ok} = getStep1State();
+    if(!ok){ toast(`Completa: ${getCastSize()} únicos + 3 equipos distintos + formato + final.`); return; }
     window.cast20 = castVals.slice();
     selectedTeams = tVals;
     comebackMode = comeback;
+    finalMode = final;
+    castSize = getCastSize();
     if (!Array.isArray(trackData)) trackData = [];
     const have = new Set(trackData.map(r=>norm(r.name)));
     window.cast20.forEach(n=>{
       if (!have.has(norm(n))) trackData.push({ name:n, cells:[] });
     });
-    buildPurgeCastGrid(window.cast20);
-    resetPurgeFlow();
-    go("purge");
+    if (castSize === 18){
+      selected18 = window.cast20.slice();
+      activePlayers = selected18.slice();
+      eliminated = [];
+      episode = 1;
+      window.roster20 = window.cast20.slice();
+      window._seasonPurgados = new Set();
+      build3TeamsBoard();
+      go(2);
+    } else {
+      buildPurgeCastGrid(window.cast20);
+      resetPurgeFlow();
+      go("purge");
+    }
   } else if(step===2){ go(3); updateChallengeAvailability(); updateChallengeAvailability(); }
   else if(step===3){ go(4); }
   else if(step===4){ go(5); }
@@ -2878,6 +2920,110 @@ if (type === "Duelos") {
 
 
 
+
+function markFinalCell(name, cls, txt){
+  const rec = trackData.find(r => norm(r.name) === norm(name));
+  if (rec) rec.final = { cls, txt };
+}
+function setFinalWinners(winner, runners){
+  finalState.winner = winner;
+  finalState.runners = (runners||[]).slice();
+  finalState.runner = finalState.runners[0] || null;
+  markFinalCell(winner, 'champ', 'Winner');
+  finalState.runners.forEach(n => markFinalCell(n, 'run', 'Runner Up'));
+}
+function countVotes(votes){
+  const out = Object.create(null);
+  votes.forEach(v => { out[v.to] = (out[v.to] || 0) + 1; });
+  return out;
+}
+function renderVoteList(votes, box){
+  box.innerHTML = "";
+  votes.forEach(v => box.appendChild(chip(v.from, `${v.from} vota por ${v.to}`)));
+}
+function makeVotes(voters, candidates, blocked){
+  const block = new Set((blocked||[]).map(norm));
+  return (voters||[]).map(from => {
+    let opts = (candidates||[]).filter(n => norm(n) !== norm(from) && !block.has(norm(n)));
+    if (!opts.length) opts = (candidates||[]).filter(n => !block.has(norm(n)));
+    return { from, to: pick(opts) };
+  }).filter(v => v.to);
+}
+function pickMostVoted(votes){
+  const counts = countVotes(votes);
+  let max = Math.max(...Object.values(counts));
+  const tied = Object.keys(counts).filter(n => counts[n] === max);
+  return pick(tied);
+}
+function juryDuelCandidates(votes, top4){
+  const counts = countVotes(votes);
+  top4.forEach(n => { if (counts[n] == null) counts[n] = 0; });
+  const rows = top4.map(n => ({n, c:counts[n]})).sort((a,b)=>b.c-a.c);
+  const firstScore = rows[0].c;
+  const topTied = rows.filter(r=>r.c===firstScore).map(r=>r.n);
+  if (topTied.length >= 2) return shuffle(topTied).slice(0,2);
+  const first = rows[0].n;
+  const secondScore = rows[1].c;
+  const secondTied = rows.filter(r=>r.c===secondScore).map(r=>r.n);
+  const chosen = secondTied.length > 1 ? pick(secondTied) : secondTied[0];
+  finalState.juryChooser = first;
+  return [first, chosen];
+}
+function setupFinalEpisode(chosen){
+  finalState.mode = finalMode || '2 Finalistas';
+  finalState.runners = [];
+  const top4 = getAlive().slice(0, 4);
+  if (top4.length < 2) { toast("Final requiere al menos 2 jugadores."); return false; }
+  const fTop = $("#finalTop4");
+  if (fTop) { fTop.innerHTML = ""; top4.forEach(n => fTop.appendChild(chip(n, n))); fTop.classList.remove("hide"); }
+
+  if (finalState.mode === '3 Finalistas'){
+    const power = pick(top4);
+    finalState.stage = 0;
+    finalState.finalists = top4.slice();
+    finalState.power = power;
+    immunes = [power];
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Final — Poder</span>`;
+    $("#immuneList").innerHTML = "";
+    $("#immuneList").appendChild(chip(power, `Gana el reto: ${power}`));
+    $("#winnersTitle").textContent = "Ganador del reto final";
+    $("#goVests").textContent = "Votación Final →";
+    return true;
+  }
+
+  if (finalState.mode === 'Jurado en Top4'){
+    const voters = uniqueList(eliminated.slice());
+    const votes = makeVotes(voters, top4, []);
+    const duel = juryDuelCandidates(votes, top4);
+    finalState.stage = 0;
+    finalState.finalists = top4.slice();
+    finalState.juryVotes = votes;
+    finalState.duelForFinalists = duel.slice();
+    nominees = duel.slice();
+    $("#immuneTeamChip").innerHTML = `<span class="pill">Jurado en Top4</span>`;
+    renderVoteList(votes, $("#immuneList"));
+    $("#winnersTitle").textContent = "Votos del jurado";
+    $("#goVests").textContent = "Ir al Duelo de Eliminación →";
+    return true;
+  }
+
+  const ranking = shuffle(top4);
+  const eliminatedFinal = ranking.slice(2);
+  finalState.finalists = ranking.slice(0, 2);
+  finalState.eliminated = eliminatedFinal;
+  eliminatedFinal.forEach(n => {
+    markFinalCell(n, 'elim', 'Eliminated');
+    if (!eliminated.includes(n)) eliminated.push(n);
+    removeEvery(activePlayers, n);
+  });
+  finalState.stage = 0;
+  $("#immuneTeamChip").innerHTML = `<span class="pill">Final — Parte 1</span>`;
+  $("#immuneList").innerHTML = "";
+  finalState.eliminated.forEach(n => $("#immuneList").appendChild(chip(n, "Eliminado")));
+  $("#winnersTitle").textContent = "Final — Eliminados";
+  $("#goVests").textContent = (finalState.mode === 'Jurado en Top2') ? "Confirmar finalistas →" : "Asignar chalecos (Final) →";
+  return true;
+}
 runChallenge.addEventListener("click", () => {
   updateChallengeAvailability();
   const chosen = challengeSelect.value || "";
@@ -2949,35 +3095,7 @@ runChallenge.addEventListener("click", () => {
 
   // ---------- Lógica por episodio ----------
   if (episode === 18) {
-    // FINAL — PARTE 1 (Top 4 => finalistas + eliminados)
-    const top4 = getAlive().slice(0, 4);
-    if (top4.length < 2) { toast("Final requiere al menos 2 jugadores."); return; }
-
-    const ranking = shuffle(top4);
-    const eliminatedFinal = ranking.slice(2);
-    finalState.finalists = ranking.slice(0, 2);
-    finalState.eliminated = eliminatedFinal;
-
-    // Marcar Final column
-    eliminatedFinal.forEach(n => {
-      const rec = trackData.find(r => norm(r.name) === norm(n));
-      rec.final = { cls: 'elim', txt: 'Eliminated' };
-      if (!eliminated.includes(n)) eliminated.push(n);
-      removeEvery(activePlayers, n);
-    });
-    finalState.stage = 0; // listo parte 1
-
-    $("#immuneTeamChip").innerHTML = `<span class="pill">Final — Parte 1</span>`;
-    const fTop = $("#finalTop4");
-    if (fTop) {
-      fTop.innerHTML = "";
-      ranking.forEach(n => fTop.appendChild(chip(n, n)));
-      fTop.classList.remove("hide");
-    }
-    $("#immuneList").innerHTML = "";
-    finalState.eliminated.forEach(n => $("#immuneList").appendChild(chip(n, "Eliminado")));
-    $("#winnersTitle").textContent = "Final — Eliminados";
-    $("#goVests").textContent = "Asignar chalecos (Final) →";
+    if (!setupFinalEpisode(chosen)) return;
 
  } else if (episode === 9) {
   // Comeback: sólo eliminados compiten (Duelos o Estrellas)
@@ -3373,12 +3491,31 @@ function prepareVests(phase, winTeam){
   const alive = getAlive().filter(n=>!immunes.includes(n));
   let pool = alive.slice();
 
-  // FINAL — PARTE 2: solo finalistas
+  // FINAL — confirmación/votación de finalistas
   if(episode===18 && finalState?.stage===1){
-    requiredVestsCount = 2;
-    $("#vestsTitle").textContent = `Final: Ambos finalistas pasan al Duelo Final`;
+    if(finalState.mode === "3 Finalistas" && !finalState.voteElim){
+      const top4 = finalState.finalists.slice();
+      const votes = makeVotes(top4, top4, [finalState.power]);
+      const eliminatedByVote = pickMostVoted(votes);
+      finalState.voteElim = eliminatedByVote;
+      finalState.voteFinal = votes;
+      finalState.eliminated = [eliminatedByVote];
+      markFinalCell(eliminatedByVote, 'elim', 'Eliminated');
+      if(!eliminated.includes(eliminatedByVote)) eliminated.push(eliminatedByVote);
+      removeEvery(activePlayers, eliminatedByVote);
+      finalState.finalists = top4.filter(n=>n!==eliminatedByVote);
+    }
+    requiredVestsCount = finalState.finalists.length;
+    const label = requiredVestsCount === 2 ? "Ambos finalistas pasan" : `${requiredVestsCount} finalistas pasan`;
+    $("#vestsTitle").textContent = `Final: ${label} al Duelo Final`;
+    if(finalState.voteFinal?.length){
+      const voteBox=document.createElement("div"); voteBox.className="chips"; voteBox.style.gridColumn="1 / -1";
+      renderVoteList(finalState.voteFinal, voteBox);
+      grid.appendChild(voteBox);
+      if(finalState.voteElim) grid.appendChild(chip(finalState.voteElim, `Eliminado por votos: ${finalState.voteElim}`));
+    }
     finalState.finalists.forEach(n=> grid.appendChild(playerChipClickable(n, {locked:true, mode:'nominate'})));
-    nominees = finalState.finalists.slice(0,2);
+    nominees = finalState.finalists.slice();
     $("#confirmVests").disabled = (nominees.length !== requiredVestsCount);
     updateVestsHelp(); return;
   }
@@ -3540,7 +3677,7 @@ else if (phase.id === 4 && phase.sub === 'B') {
 
 // ——— Orden estable del TR: 20 filas; PURG al final ———
 function getRosterOrder(){
-  let base = (Array.isArray(window.roster20) && window.roster20.length === 20)
+  let base = (Array.isArray(window.roster20) && window.roster20.length >= 18)
     ? window.roster20.slice()
     : (activePlayers || []).concat(eliminated || []);
   if (window._seasonPurgados && window._seasonPurgados.size){
@@ -3647,7 +3784,10 @@ $("#goVests").addEventListener("click", ()=>{
   if(episode===9){
     comebackSpecial(predefinedComebackWinners); comebackApplied = true; buildTRTable(); go(6);
   } else if(episode===18){
-    // pasar a Parte 2 (chalecos finales)
+    if(finalState.mode === "Jurado en Top4" && finalState.stage === 0){
+      go(5); renderNominees(); return;
+    }
+    // pasar a confirmación de finalistas
     finalState.stage = 1;
     go(4);
     prepareVests({id:0}, null);
@@ -3660,7 +3800,8 @@ $("#goVests").addEventListener("click", ()=>{
 $("#confirmVests").addEventListener("click", () => {
   // Final EP18 · Parte 2
   if (episode === 18 && finalState?.stage === 1) {
-    if (nominees.length !== 2) { toast("Selecciona ambos finalistas para el duelo."); return; }
+    const needFinalists = finalState.finalists?.length || 2;
+    if (nominees.length !== needFinalists) { toast("Selecciona los finalistas para el duelo."); return; }
     go(5); renderNominees(); return;
   }
 
@@ -3733,23 +3874,53 @@ $("#seeResults").addEventListener("click", ()=>{
   };
 
   // FINAL: no aplican eventos especiales (fase 4)
-  if (episode === 18 && finalState.stage === 1){
+  if (episode === 18 && finalState.stage === 0 && finalState.mode === 'Jurado en Top4'){
     const ranking = shuffle(nominees.slice());
     const eliminatedNow = ranking[ranking.length-1];
-    const winner = ranking.find(n=>n!==eliminatedNow);
-    finalState.winner = winner; finalState.runner = eliminatedNow;
-
-    const rw = trackData.find(r=>norm(r.name)===norm(winner));
-    const rr = trackData.find(r=>norm(r.name)===norm(eliminatedNow));
-    if (rw) rw.final = {cls:'champ', txt:'Winner'};
-    if (rr) rr.final = {cls:'run',   txt:'Runner Up'};
-
-    activePlayers = [winner, eliminatedNow];
-    revealOneByOne(ranking, /*finalMode*/ true);
-    resultsLockedEp = episode;
+    markFinalCell(eliminatedNow, 'elim', 'Eliminated');
+    if (!eliminated.includes(eliminatedNow)) eliminated.push(eliminatedNow);
+    removeEvery(activePlayers, eliminatedNow);
+    finalState.eliminated = uniqueList((finalState.eliminated||[]).concat([eliminatedNow]));
+    finalState.finalists = getAlive().slice(0,3);
+    finalState.stage = 1;
+    nominees = [];
+    revealOneByOne(ranking, false);
+    const btn = document.getElementById('toTrack');
+    if (btn) btn.textContent = 'Confirmar finalistas →';
+    resultsLockedEp = 0;
     return;
   }
 
+  if (episode === 18 && finalState.stage === 1){
+    if (finalState.mode === 'Jurado en Top2'){
+      const voters = uniqueList(eliminated.slice());
+      const votes = makeVotes(voters, nominees, []);
+      const winner = pickMostVoted(votes);
+      const runner = nominees.find(n=>n!==winner);
+      setFinalWinners(winner, [runner]);
+      activePlayers = nominees.slice();
+      const counts = countVotes(votes);
+      const box = $('#duelRanking');
+      box.innerHTML = '';
+      renderVoteList(votes, box);
+      const diff = document.createElement('div');
+      diff.className = 'help';
+      diff.textContent = `Con una diferencia de ${(counts[winner]||0)} vs ${(counts[runner]||0)}, el/la ganador/a de la temporada es: ${winner}`;
+      box.appendChild(diff);
+      $('#duelResults').classList.remove('hide');
+      resultsLockedEp = episode;
+      return;
+    }
+
+    const ranking = shuffle(nominees.slice());
+    const winner = ranking[0];
+    const runners = ranking.slice(1);
+    setFinalWinners(winner, runners);
+    activePlayers = ranking.slice();
+    revealOneByOne(ranking, true);
+    resultsLockedEp = episode;
+    return;
+  }
   // ===== Evento especial (90%) por fase — SOLO 1 VEZ POR TEMPORADA =====
   const phase = currentPhase(episode); // 1..4
   const canUseSeasonEvent = (window._seasonSpecialEventUsed === false); 
@@ -3817,7 +3988,13 @@ $("#seeResults").addEventListener("click", ()=>{
   resultsLockedEp = episode;
 });
 
-$("#toTrack").addEventListener("click", ()=> go(6));
+$("#toTrack").addEventListener("click", ()=>{
+  if(episode===18 && finalState?.mode==="Jurado en Top4" && finalState.stage===1 && !finalState.winner){
+    const btn = document.getElementById("toTrack"); if(btn) btn.textContent = "Ver Track Record →";
+    go(4); prepareVests({id:0}, null); return;
+  }
+  go(6);
+});
 
 
 /* ====== Paso 6: Track ====== */
@@ -3842,9 +4019,10 @@ function buildTRTable(){
   const posMap = Object.create(null);
 
   // Final winner/runner
-  if (episode >= 18 && finalState?.winner && finalState?.runner){
+  if (episode >= 18 && finalState?.winner){
     posMap[norm(finalState.winner)] = 1;
-    posMap[norm(finalState.runner)] = 2;
+    const runners = (Array.isArray(finalState.runners) && finalState.runners.length) ? finalState.runners : (finalState.runner ? [finalState.runner] : []);
+    runners.forEach((n,i)=>{ posMap[norm(n)] = 2 + i; });
   }
 
   // PURG ocupan TOTAL y TOTAL-1 (20 y 19)
@@ -4014,7 +4192,7 @@ document.querySelector("#nextEpisode").addEventListener("click", ()=>{
   if(episode===17){
     // Ir a FINAL (ep 18) con pantallas normales
     episode = 18; challengeLockedEp=0; resultsLockedEp=0; nominees=[]; immunes=[];
-    finalState = {stage:0, finalists:[], eliminated:[], winner:null, runner:null};
+    finalState = {stage:0, finalists:[], eliminated:[], winner:null, runner:null, runners:[], mode:finalMode};
     resetEpisodeUI(); go(3); updateChallengeAvailability(); return;
   }
   if(episode>=18){
